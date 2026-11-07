@@ -92,19 +92,6 @@
   .side.left .opt { text-align: left; }
   .side.right .opt { text-align: right; }
 
-  /* Gizli seçenek: yukarı/aşağı, arka planla kamufle; kart yaklaştıkça belirir ve parlar */
-  .side.hid.up   { background: radial-gradient(90% 42% at 50% 0%,   rgba(224,190,122,.42), rgba(224,190,122,.10) 60%, transparent 100%); }
-  .side.hid.down { background: radial-gradient(90% 42% at 50% 100%, rgba(224,190,122,.42), rgba(224,190,122,.10) 60%, transparent 100%); }
-  .hopt {
-    position: absolute; left: 26px; right: 26px; text-align: center;
-    font: italic 22px/1.2 Georgia, 'Times New Roman', serif; letter-spacing: .04em;
-    color: #f4e3bd;
-    text-shadow: 0 0 18px rgba(240,200,130,.7), 0 1px 0 rgba(0,0,0,.55);
-    opacity: 0; will-change: transform, opacity;
-  }
-  .side.hid.up   .hopt { top: max(28px, calc(50% - var(--ch) / 2 - 150px)); }
-  .side.hid.down .hopt { bottom: max(28px, calc(50% - var(--ch) / 2 - 150px)); }
-
   .end {
     position: absolute; inset: 0; z-index: 3;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
@@ -115,17 +102,79 @@
   .end.show { opacity: 1; pointer-events: auto; }
   .end p { font-size: 26px; line-height: 1.25; }
   .end small { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; opacity: .45; }
+
+  /* ---- Kare kart ---- */
+  :root { --cw: min(78vw, 340px); --ch: var(--cw); --drop: 56px; }
+  .stage { padding-bottom: calc(var(--drop) * 2); }
+  .card { aspect-ratio: 1 / 1; padding: 0; background: none; border-radius: 30px; display: block; }
+  .art { position:absolute; inset:0; border-radius:30px; background:#1b2127; overflow:hidden;
+    box-shadow: 0 18px 40px rgba(0,0,0,.6); }
+  .art svg { display:block; width:100%; height:100%; }
+  .meta { position:absolute; left:-6px; right:-6px; top:calc(100% + 30px); padding:0; text-align:center; color:#efe9dc; }
+  .spk { font-size:11px; letter-spacing:.26em; opacity:.5; margin-bottom:10px; }
+  .txt { font-size:18px; line-height:1.4; }
+  .opt { bottom: calc(50% + var(--drop) + var(--ch) / 2 + 28px); }
+  .deck { position:absolute; left:50%; top:calc(50% - var(--drop)); width:var(--cw); aspect-ratio:1; transform:translate(-50%,-50%); z-index:1; pointer-events:none; }
+  .deck i { position:absolute; inset:0; border-radius:30px; background-color:#171c21; box-shadow: inset 0 0 0 1px rgba(255,255,255,.07);
+    background-image: linear-gradient(45deg, rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(-45deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 16px 16px; }
+  .deck i::after { content:''; position:absolute; inset:14px; border-radius:20px; border:1px solid rgba(255,255,255,.09); }
+  .deck i:nth-child(1) { transform:translate(-10px,8px) rotate(-4deg); background-color:#101418; }
+  .deck i:nth-child(2) { transform:translate(9px,5px) rotate(3deg); background-color:#13181c; }
+
+  /* ---- v4: sabit üst metin, düzenli deste ---- */
+  :root { --drop: 0px; }
+  .meta { position:absolute; left:26px; right:26px; top:auto; bottom:calc(50% + var(--drop) + var(--ch) / 2 + 30px); z-index:2; pointer-events:none;
+    text-align:center; color:#efe9dc; font-family:Georgia,'Times New Roman',serif; }
+  .meta .spk { display:block; font-size:11px; letter-spacing:.28em; text-transform:uppercase; opacity:.5; margin-bottom:10px; }
+  .meta .txt { font-size:20px; line-height:1.38; }
+  .opt { bottom:auto; top:calc(50% - var(--drop) + var(--ch) / 2 + 58px); }
+  .deck i:nth-child(1) { transform:translateY(34px) scale(.88); background-color:#0d1115; }
+  .deck i:nth-child(2) { transform:translateY(17px) scale(.94); background-color:#11161a; }
+  .deck i:nth-child(3) { transform:none; background-color:#161b20; }
 </style>
 </head>
 <body>
 <div class="stage" id="stage">
   <div class="side left" id="sideL"><div class="opt" id="optL"></div></div>
   <div class="side right" id="sideR"><div class="opt" id="optR"></div></div>
-  <div class="side hid up" id="sideH"><div class="hopt" id="optH"></div></div>
+  <div class="meta" id="meta"><span class="spk" id="spk"></span><div class="txt" id="txt"></div></div>
+  <div class="deck"><i></i><i></i><i></i></div>
   <div class="card" id="card">
-    <div class="art"><i></i></div>
-    <div class="meta"><span class="spk" id="spk"></span><div class="txt" id="txt"></div></div>
-  </div>
+    <div class="art"><svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+<defs><clipPath id="hc"><path d="M154 190Q154 150 200 150Q246 150 246 190V224Q246 262 200 270Q154 262 154 224Z"/></clipPath></defs>
+<rect width="400" height="400" fill="#1c2630"/>
+<polygon points="190,58 210,58 310,400 90,400" fill="#283642"/>
+<rect x="199" y="0" width="2" height="30" fill="#0c1014"/>
+<path d="M170 54L184 30H216L230 54Z" fill="#0c1014"/>
+<circle cx="200" cy="58" r="6" fill="#f3dfae"/>
+<path d="M36 400V362Q36 318 96 306L156 296H244L304 306Q364 318 364 362V400Z" fill="#0c1014"/>
+<rect x="178" y="256" width="44" height="50" fill="#a9765a"/>
+<polygon points="162,296 238,296 200,368" fill="#efe7d6"/>
+<polygon points="150,300 168,294 200,368 176,372" fill="#171e25"/>
+<polygon points="250,300 232,294 200,368 224,372" fill="#171e25"/>
+<rect x="190" y="304" width="20" height="14" rx="3" fill="#c2452d"/>
+<polygon points="191,318 209,318 214,350 200,366 186,350" fill="#c2452d"/>
+<circle cx="154" cy="216" r="10" fill="#c39670"/>
+<circle cx="246" cy="216" r="10" fill="#dcb08a"/>
+<path d="M154 190Q154 150 200 150Q246 150 246 190V224Q246 262 200 270Q154 262 154 224Z" fill="#dcb08a"/>
+<g clip-path="url(#hc)">
+ <rect x="150" y="150" width="50" height="124" fill="#c39670"/>
+ <path d="M150 176H250V196Q200 210 150 196Z" fill="#6a4a3d"/>
+</g>
+<circle cx="184" cy="198" r="3.4" fill="#1b1416"/>
+<circle cx="216" cy="198" r="3.4" fill="#1b1416"/>
+<polygon points="200,210 208,232 200,234" fill="#c39670"/>
+<rect x="187" y="246" width="26" height="4" rx="2" fill="#8a5a4a"/>
+<g transform="rotate(-3 200 160)">
+ <path d="M148 160C146 118 168 98 200 98C232 98 254 118 252 160Z" fill="#0c1014"/>
+ <rect x="147" y="144" width="106" height="14" fill="#c2452d"/>
+ <ellipse cx="200" cy="165" rx="108" ry="15" fill="#0c1014"/>
+</g>
+<rect x="0" y="372" width="400" height="28" fill="#12171c"/>
+<rect x="0" y="372" width="400" height="2" fill="#232c34"/>
+</svg></div>
+      </div>
   <div class="end" id="end"><p id="endT"></p><small>Dokun ve yeniden başla</small></div>
 </div>
 
@@ -144,66 +193,33 @@
  *     unset:   ['bayrak', ...]           // hikaye bayraklarını kaldır
  *     next:    ['kartId', ...]           // sıradaki kartları zincirle
  *   }
- *   hidden:   { label, at:'up'|'down', effects, set, unset, next, requires }   // gizli üçüncü seçenek
  *   requires: { flags:[], notFlags:[], stat:{ army:{min:30,max:80} }, minTurn:0 }
  *   weight:   çekilme ağırlığı (varsayılan 1)
  *   once:     true ise bir kez çıkar
  * }
  */
 window.CARDS = [
-  {
-    id: 'intro_advisor',
-    speaker: 'Danışman',
-    text: 'Majesteleri, taht odası sizi bekliyor.',
-    left:  { label: 'Bekletin',  effects: { people: -5 } },
-    right: { label: 'Geliyorum', effects: { people: 5 }, set: ['tahta_cikti'] },
-    once: true
-  },
-  {
-    id: 'harvest',
-    speaker: 'Köylü',
-    text: 'Hasat zayıf geçti. Vergiyi hafifletir misiniz?',
-    left:  { label: 'Hayır',  effects: { people: -10, wealth: 8 } },
-    right: { label: 'Evet',   effects: { people: 10, wealth: -8 } },
-    requires: { flags: ['tahta_cikti'] },
-    hidden: { label: 'Ambarı gizlice aç', at: 'up', effects: { people: 6, wealth: -3 }, set: ['ambar_acik'] }
-  },
-  {
-    id: 'priest',
-    speaker: 'Rahip',
-    text: 'Eski tapınak çöküyor. Onarım için altın gerek.',
-    left:  { label: 'Reddet', effects: { faith: -10 } },
-    right: { label: 'Öde',    effects: { faith: 10, wealth: -10 } },
-    requires: { flags: ['tahta_cikti'] },
-    hidden: { label: 'Rahibi sına', at: 'down', effects: { faith: -3 }, set: ['rahip_sinandi'] }
-  },
-  {
-    id: 'general',
-    speaker: 'General',
-    text: 'Sınırda hareketlilik var. Askeri arttıralım mı?',
-    left:  { label: 'Gerek yok', effects: { army: -8 }, set: ['sinir_savunmasiz'] },
-    right: { label: 'Arttır',    effects: { army: 10, wealth: -6 }, next: ['border_raid'] },
-    requires: { flags: ['tahta_cikti'] },
-    hidden: { label: 'Yabancının sırrını kullan', at: 'up', requires: { flags: ['sir_biliyor'] }, effects: { army: 6 } }
-  },
-  {
-    id: 'border_raid',
-    speaker: 'Haberci',
-    text: 'Sınır köyleri akına uğradı!',
-    left:  { label: 'Müdahale etme', effects: { people: -12 } },
-    right: { label: 'Ordu gönder',   effects: { army: -6, people: 8 } },
-    requires: { flags: ['sinir_savunmasiz'] },
-    weight: 3
-  },
-  {
-    id: 'stranger',
-    speaker: 'Yabancı',
-    text: 'Size bir sır satmak istiyorum.',
-    left:  { label: 'Kov',     effects: {} },
-    right: { label: 'Dinle',   effects: { wealth: -5 }, set: ['sir_biliyor'] },
-    requires: { flags: ['tahta_cikti'], minTurn: 3 },
-    once: true
-  }
+  { id:'q1', speaker:'Uğultu', clarity:0.04, text:'…uyan… Beni du…yu…yor musun? Gözlerini aç.',
+    left:  { label:'Sus', effects:{}, next: ['q2'] },
+    right: { label:'Evet', effects:{}, next: ['q2'] } },
+  { id:'q2', speaker:'Boğuk bir ses', clarity:0.15, text:'Dur. Adını söyle bana.',
+    left:  { label:'Hatırlamıyorum', effects:{}, next: ['q3'] },
+    right: { label:'Söylemem', effects:{}, next: ['q3'] } },
+  { id:'q3', speaker:'Boğuk bir ses', clarity:0.3, text:'Dün gece… neredeydin? Düşün.',
+    left:  { label:'Hayır', effects:{}, next: ['q4'] },
+    right: { label:'Hatırlıyorum', effects:{}, next: ['q4'], set:['hatirliyor'] } },
+  { id:'q4', speaker:'Bir erkek sesi', clarity:0.5, text:'Yanındaki adam kimdi? Bana onu anlat.',
+    left:  { label:'Tanımıyorum', effects:{}, next: ['q5'] },
+    right: { label:'Anlatırım', effects:{}, next: ['q5'] } },
+  { id:'q5', speaker:'Bir gölge', clarity:0.7, text:'Bir şey saklıyorsun. Gözlerinden belli.',
+    left:  { label:'Saklamıyorum', effects:{}, next: ['q6'] },
+    right: { label:'Saklıyorum', effects:{}, next: ['q6'] } },
+  { id:'q6', speaker:'???', clarity:0.88, text:'Bana bak. Şimdi söyle: beni tanıdın mı?',
+    left:  { label:'Hayır', effects:{}, next: ['q7'] },
+    right: { label:'Belki', effects:{}, next: ['q7'] } },
+  { id:'q7', speaker:'???', clarity:1, text:'Işık kısılıyor. Yarın devam ederiz.',
+    left:  { label:'…', effects:{} },
+    right: { label:'…', effects:{} } }
 ];
 
 /* Oyun sonları: bir istatistik 0'a ya da 100'e değince tetiklenir. */
@@ -230,7 +246,7 @@ window.ENDINGS = {
  */
 (function () {
   var STATS = ['faith', 'people', 'army', 'wealth'];
-  var SAVE_KEY = 'akan-yazi-save-v1';
+  var SAVE_KEY = 'akan-yazi-save-v2';
   var SWIPE_MIN = 60; // px
 
   var Game = {
@@ -258,7 +274,7 @@ window.ENDINGS = {
     },
 
     // --- Deste -------------------------------------------------------------
-    // Koşul kontrolü (kart ve gizli seçenek için ortak)
+    // Koşul kontrolü 
     meets: function (r) {
       var s = this.state; r = r || {};
       if (r.minTurn && s.turn < r.minTurn) return false;
@@ -277,11 +293,6 @@ window.ENDINGS = {
     eligible: function (card) {
       if (card.once && this.state.seen[card.id]) return false;
       return this.meets(card.requires);
-    },
-
-    // Kartın gizli seçeneği varsa ve şartı sağlanıyorsa döner, yoksa null
-    hiddenOf: function (card) {
-      return card && card.hidden && this.meets(card.hidden.requires) ? card.hidden : null;
     },
 
     byId: function (id) {
@@ -315,7 +326,7 @@ window.ENDINGS = {
     // --- Seçim -------------------------------------------------------------
     choose: function (dir) {
       if (this.state.over || !this.current) return null;
-      var card = this.current, opt = dir === 'hidden' ? this.hiddenOf(card) : card[dir];
+      var card = this.current, opt = card[dir];
       if (!opt) return null;
       var s = this.state;
 
@@ -443,6 +454,15 @@ window.ENDINGS = {
 })();
 </script>
 <script>
+/* Kart içeriğini çizer. (clarity alanı veride duruyor, animasyonlar şimdilik kapalı.) */
+window.Scene = {
+  render: function (c, spk, txt) {
+    spk.textContent = c.speaker || '';
+    txt.textContent = c.text || '';
+  }
+};
+</script>
+<script>
 /* Kart: sürükleme, seçim bölgesi ve seçenek animasyonları.
  *  - Kart parmağı birebir takip eder.
  *  - Kart sağ/sol seçim bölgesindeyken bırakılırsa süzülerek çıkar ve seçenek uygulanır.
@@ -455,21 +475,19 @@ window.ENDINGS = {
   var spk = document.getElementById('spk'), txt = document.getElementById('txt');
   var sideL = document.getElementById('sideL'), sideR = document.getElementById('sideR');
   var optL = document.getElementById('optL'), optR = document.getElementById('optR');
-  var sideH = document.getElementById('sideH'), optH = document.getElementById('optH');
   var endEl = document.getElementById('end'), endT = document.getElementById('endT');
 
   var x = 0, y = 0, vx = 0, vy = 0, s = 1, o = 0;        // kartın durumu
   var mode = 'idle';                                       // idle | drag | settle | exit | gap | enter
   var t0 = 0, dir = 0, zone = 105;
-  var pl = 0, pr = 0, ph = 0;                              // görünen arka plan ilerlemesi (sol / sağ / gizli)
-  var axis = 'x', zoneY = 110, hidAvail = false, hidAt = 'up', nextH = null, hidArmed = false;
+  var pl = 0, pr = 0;                                      // görünen arka plan ilerlemesi (sol / sağ)
   var dragging = false, ox = 0, oy = 0, trail = [];
   var raf = 0, last = 0;
   var pending = null, ended = null, locked = false, nextL = null, nextR = null;
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function smooth(v) { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); }
-  function calcZone() { zone = clamp(window.innerWidth * 0.27, 90, 130); zoneY = clamp(window.innerHeight * 0.14, 70, 120); }
+  function calcZone() { zone = clamp(window.innerWidth * 0.27, 90, 130); }
   function prog(px) { return smooth((Math.abs(px) - 6) / (zone - 6)); }
 
   function draw() {
@@ -481,38 +499,28 @@ window.ENDINGS = {
     var lo = clamp((pl - .15) / .6, 0, 1), ro = clamp((pr - .15) / .6, 0, 1);
     optL.style.opacity = lo.toFixed(3);  optL.style.transform = 'translate3d(' + (-(1 - lo) * 26).toFixed(1) + 'px,0,0)';
     optR.style.opacity = ro.toFixed(3);  optR.style.transform = 'translate3d(' + ((1 - ro) * 26).toFixed(1) + 'px,0,0)';
-    sideH.style.opacity = ph.toFixed(3);
-    optH.style.opacity = (ph * ph).toFixed(3);               // başta neredeyse görünmez, yaklaştıkça parlar
-    optH.style.transform = 'translate3d(0,' + ((hidAt === 'up' ? -1 : 1) * (1 - ph) * 12).toFixed(1) + 'px,0)';
   }
 
   function applyLabels() {                                 // metin, görünmezken değişir (geçiş sırasında göz yanılmaz)
     if (nextL !== null && pl < .15) { optL.textContent = nextL; nextL = null; }
     if (nextR !== null && pr < .15) { optR.textContent = nextR; nextR = null; }
-    if (nextH !== null && ph < .1) { optH.textContent = nextH.label; sideH.className = 'side hid ' + nextH.at; nextH = null; }
   }
 
   function renderCard(c) {
-    spk.textContent = c.speaker || '';
-    txt.textContent = c.text || '';
+    Scene.render(c, spk, txt);
     nextL = c.left ? c.left.label : '';
     nextR = c.right ? c.right.label : '';
-    var hd = Game.hiddenOf(c);
-    hidAvail = !!hd;
-    hidAt = hd && hd.at === 'down' ? 'down' : 'up';
-    nextH = hd ? { label: hd.label, at: hidAt } : { label: '', at: hidAt };
     applyLabels();
   }
 
   function startEnter() {
     x = y = vx = vy = 0; s = .95; o = 0;
-    hidArmed = false;
     mode = 'enter'; t0 = performance.now(); locked = true; kick();
   }
 
   function showEnd() {
     endT.textContent = ended ? ended.text : '';
-    endEl.classList.add('show');
+    endEl.classList.add('show'); document.getElementById('meta').style.opacity = 0;
   }
 
   function beginNext() {
@@ -548,21 +556,12 @@ window.ENDINGS = {
       } else busy = true;
     } else if (mode === 'exit') {                           // seçim: kart süzülerek çıkar ve silikleşir
       var ke = 70, ce = 2 * Math.sqrt(ke) * .9;
-      if (axis === 'x') {
-        var far = dir * (window.innerWidth * .5 + card.offsetWidth + 80);
-        for (i = 0; i < n; i++) {
-          vx += (ke * (far - x) - ce * vx) * h; vy -= vy * 3 * h;
-          x += vx * h; y += vy * h;
-        }
-        o = 1 - smooth((Math.abs(x) - zone) / (window.innerWidth * .5));
-      } else {
-        var farY = dir * (window.innerHeight * .5 + card.offsetHeight + 80);
-        for (i = 0; i < n; i++) {
-          vy += (ke * (farY - y) - ce * vy) * h; vx -= vx * 3 * h;
-          x += vx * h; y += vy * h;
-        }
-        o = 1 - smooth((Math.abs(y) - zoneY) / (window.innerHeight * .35));
+      var far = dir * (window.innerWidth * .5 + card.offsetWidth + 80);
+      for (i = 0; i < n; i++) {
+        vx += (ke * (far - x) - ce * vx) * h; vy -= vy * 3 * h;
+        x += vx * h; y += vy * h;
       }
+      o = 1 - smooth((Math.abs(x) - zone) / (window.innerWidth * .5));
       if (o <= .01) { o = 0; mode = 'gap'; t0 = t; }
       busy = true;
     } else if (mode === 'gap') {                            // arka plan sakinleşir, sonra yeni kart
@@ -573,22 +572,15 @@ window.ENDINGS = {
       if (kk >= 1) { mode = 'idle'; locked = false; o = 1; s = 1; y = 0; } else busy = true;
     }
 
-    var tl = 0, tr = 0, th = 0;                             // arka plan hedefleri
+    var tl = 0, tr = 0;                             // arka plan hedefleri
     var live = mode === 'drag' || mode === 'settle';
-    if (live || (mode === 'exit' && axis === 'x')) {
+    if (live || mode === 'exit') {
       var p = prog(x);
       if (x > 0) tr = p; else tl = p;
     }
-    if (hidAvail && (live || (mode === 'exit' && axis === 'y'))) {
-      th = smooth(((hidAt === 'up' ? -y : y) - 10) / (zoneY - 10));
-    }
-    if (mode === 'drag') {                                  // gizli bölgeye girince tek, hafif titreşim
-      if (th >= .999 && !hidArmed) { hidArmed = true; if (navigator.vibrate) { try { navigator.vibrate(12); } catch (_) {} } }
-      else if (th < .8) hidArmed = false;
-    }
-    pl = approach(pl, tl, dt); pr = approach(pr, tr, dt); ph = approach(ph, th, dt);
-    if (Math.abs(pl - tl) > .002 || Math.abs(pr - tr) > .002 || Math.abs(ph - th) > .002) busy = true;
-    else { pl = tl; pr = tr; ph = th; }
+    pl = approach(pl, tl, dt); pr = approach(pr, tr, dt);
+    if (Math.abs(pl - tl) > .002 || Math.abs(pr - tr) > .002) busy = true;
+    else { pl = tl; pr = tr; }
 
     applyLabels();
     draw();
@@ -603,8 +595,7 @@ window.ENDINGS = {
     var a = trail[0], b = trail[trail.length - 1], dt = (b.t - a.t) / 1000;
     vx = dt > .01 ? clamp((b.x - a.x) / dt, -1800, 1800) : 0;
     vy = dt > .01 ? clamp((b.y - a.y) / dt, -1800, 1800) : 0;
-    if (name === 'hidden') { axis = 'y'; dir = hidAt === 'up' ? -1 : 1; }
-    else { axis = 'x'; dir = name === 'right' ? 1 : -1; }
+    dir = name === 'right' ? 1 : -1;
     locked = true; mode = 'exit';
     if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
     Game.choose(name);                                      // seçenek uygulanır; sıradaki kart 'card' olayıyla gelir
@@ -632,10 +623,8 @@ window.ENDINGS = {
   function release(e) {
     if (!dragging) return;
     if (e.type === 'pointerup') {                              // bir seçim bölgesinde bırakıldı: seçenek uygulanır
-      var nx = Math.abs(x) / zone;
-      var ny = hidAvail ? (hidAt === 'up' ? -y : y) / zoneY : 0;
-      if (Math.max(nx, ny) >= 1) {
-        commit(ny >= nx ? 'hidden' : (x > 0 ? 'right' : 'left'), e);
+      if (Math.abs(x) >= zone) {
+        commit(x > 0 ? 'right' : 'left', e);
         return;
       }
     }
