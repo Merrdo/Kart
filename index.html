@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Akan Yazı</title>
+<!-- viewport-fit=cover: içerik çentik/ada ve ev çubuğu altına kadar uzanır -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Akan Yazı">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+  :root { --bg: #000000; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Safe area boşluğu YOK: env(safe-area-inset-*) bilerek kullanılmadı */
+  html, body {
+    width: 100%;
+    height: var(--full-h, 100%);
+    min-height: 100%;
+    background: var(--bg);
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+
+  /* Oyun sahnesi: şimdilik saf siyah, yazı yok. Kartlar buraya gelecek. */
+  .stage {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: var(--full-h, 100%);
+    overflow: hidden;
+    background: var(--bg);
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage"></div>
+
+<script>
+/* Kart verisi — hikaye burada yazılır, motor (game.js) bunu okur.
+ *
+ * Kart şeması:
+ * {
+ *   id:       benzersiz anahtar
+ *   speaker:  konuşan karakter
+ *   text:     kartın metni
+ *   left / right: {                      // sola / sağa kaydırma seçimi
+ *     label:   seçim etiketi
+ *     effects: { faith, people, army, wealth }   // + / - değişim
+ *     set:     ['bayrak', ...]           // hikaye bayrakları koy
+ *     unset:   ['bayrak', ...]           // hikaye bayraklarını kaldır
+ *     next:    ['kartId', ...]           // sıradaki kartları zincirle
+ *   }
+ *   requires: { flags:[], notFlags:[], stat:{ army:{min:30,max:80} }, minTurn:0 }
+ *   weight:   çekilme ağırlığı (varsayılan 1)
+ *   once:     true ise bir kez çıkar
+ * }
+ */
+window.CARDS = [
+  {
+    id: 'intro_advisor',
+    speaker: 'Danışman',
+    text: 'Majesteleri, taht odası sizi bekliyor.',
+    left:  { label: 'Bekletin',  effects: { people: -5 } },
+    right: { label: 'Geliyorum', effects: { people: 5 }, set: ['tahta_cikti'] },
+    once: true
+  },
+  {
+    id: 'harvest',
+    speaker: 'Köylü',
+    text: 'Hasat zayıf geçti. Vergiyi hafifletir misiniz?',
+    left:  { label: 'Hayır',  effects: { people: -10, wealth: 8 } },
+    right: { label: 'Evet',   effects: { people: 10, wealth: -8 } },
+    requires: { flags: ['tahta_cikti'] }
+  },
+  {
+    id: 'priest',
+    speaker: 'Rahip',
+    text: 'Eski tapınak çöküyor. Onarım için altın gerek.',
+    left:  { label: 'Reddet', effects: { faith: -10 } },
+    right: { label: 'Öde',    effects: { faith: 10, wealth: -10 } },
+    requires: { flags: ['tahta_cikti'] }
+  },
+  {
+    id: 'general',
+    speaker: 'General',
+    text: 'Sınırda hareketlilik var. Askeri arttıralım mı?',
+    left:  { label: 'Gerek yok', effects: { army: -8 }, set: ['sinir_savunmasiz'] },
+    right: { label: 'Arttır',    effects: { army: 10, wealth: -6 }, next: ['border_raid'] },
+    requires: { flags: ['tahta_cikti'] }
+  },
+  {
+    id: 'border_raid',
+    speaker: 'Haberci',
+    text: 'Sınır köyleri akına uğradı!',
+    left:  { label: 'Müdahale etme', effects: { people: -12 } },
+    right: { label: 'Ordu gönder',   effects: { army: -6, people: 8 } },
+    requires: { flags: ['sinir_savunmasiz'] },
+    weight: 3
+  },
+  {
+    id: 'stranger',
+    speaker: 'Yabancı',
+    text: 'Size bir sır satmak istiyorum.',
+    left:  { label: 'Kov',     effects: {} },
+    right: { label: 'Dinle',   effects: { wealth: -5 }, set: ['sir_biliyor'] },
+    requires: { flags: ['tahta_cikti'], minTurn: 3 },
+    once: true
+  }
+];
+
+/* Oyun sonları: bir istatistik 0'a ya da 100'e değince tetiklenir. */
+window.ENDINGS = {
+  faith:  { low: { id: 'end_faith_low',  text: 'İnancın söndü.' },
+            high: { id: 'end_faith_high', text: 'Din, tahtı yuttu.' } },
+  people: { low: { id: 'end_people_low',  text: 'Halk ayaklandı.' },
+            high: { id: 'end_people_high', text: 'Halk seni tahttan indirdi.' } },
+  army:   { low: { id: 'end_army_low',  text: 'Ordu dağıldı.' },
+            high: { id: 'end_army_high', text: 'Generaller darbe yaptı.' } },
+  wealth: { low: { id: 'end_wealth_low',  text: 'Hazine boşaldı.' },
+            high: { id: 'end_wealth_high', text: 'Servet, seni yozlaştırdı.' } }
+};
+
+/* Oyun çekirdeği (Reigns tarzı): durum, deste, seçim, son kontrolü, kaydırma girişi.
+ * Arayüz yok — ileride render katmanı Game olaylarını dinleyerek kartı çizecek.
+ *
+ * Olaylar (stage üzerinde CustomEvent):
+ *   'card'   → { card }                 yeni kart çekildi
+ *   'choice' → { card, dir, result }    seçim yapıldı
+ *   'end'    → { ending }               oyun bitti
+ *   'swipe'  → { dir, dx }              ham kaydırma (left | right)
+ *   'drag'   → { dx, ratio }            sürükleme sırasında (-1..1)
+ */
+(function () {
+  var STATS = ['faith', 'people', 'army', 'wealth'];
+  var SAVE_KEY = 'akan-yazi-save-v1';
+  var SWIPE_MIN = 60; // px
+
+  var Game = {
+    el: null,
+    state: null,
+    current: null,
+
+    init: function (el) {
+      this.el = el;
+      this.state = this.load() || this.fresh();
+      this.bindInput();
+      if (!this.state.over) this.draw();
+    },
+
+    fresh: function () {
+      var s = { turn: 0, stats: {}, flags: {}, seen: {}, queue: [], over: false, ending: null };
+      STATS.forEach(function (k) { s.stats[k] = 50; });
+      return s;
+    },
+
+    reset: function () {
+      this.state = this.fresh();
+      this.save();
+      this.draw();
+    },
+
+    // --- Deste -------------------------------------------------------------
+    eligible: function (card) {
+      var s = this.state, r = card.requires || {};
+      if (card.once && s.seen[card.id]) return false;
+      if (r.minTurn && s.turn < r.minTurn) return false;
+      if (r.flags && !r.flags.every(function (f) { return s.flags[f]; })) return false;
+      if (r.notFlags && r.notFlags.some(function (f) { return s.flags[f]; })) return false;
+      if (r.stat) {
+        for (var k in r.stat) {
+          var v = s.stats[k], c = r.stat[k];
+          if (c.min != null && v < c.min) return false;
+          if (c.max != null && v > c.max) return false;
+        }
+      }
+      return true;
+    },
+
+    byId: function (id) {
+      return window.CARDS.filter(function (c) { return c.id === id; })[0] || null;
+    },
+
+    pick: function () {
+      var s = this.state, card = null;
+      while (s.queue.length && !card) {          // zincirlenen kartlar önce
+        var q = this.byId(s.queue.shift());
+        if (q && this.eligible(q)) card = q;
+      }
+      if (card) return card;
+      var pool = window.CARDS.filter(this.eligible, this);
+      if (!pool.length) return null;
+      var total = pool.reduce(function (a, c) { return a + (c.weight || 1); }, 0);
+      var roll = Math.random() * total;
+      for (var i = 0; i < pool.length; i++) {
+        roll -= (pool[i].weight || 1);
+        if (roll <= 0) return pool[i];
+      }
+      return pool[pool.length - 1];
+    },
+
+    draw: function () {
+      this.current = this.pick();
+      if (this.current) this.emit('card', { card: this.current });
+      return this.current;
+    },
+
+    // --- Seçim -------------------------------------------------------------
+    choose: function (dir) {
+      if (this.state.over || !this.current) return null;
+      var card = this.current, opt = card[dir];
+      if (!opt) return null;
+      var s = this.state;
+
+      var e = opt.effects || {};
+      STATS.forEach(function (k) {
+        if (e[k]) s.stats[k] = Math.max(0, Math.min(100, s.stats[k] + e[k]));
+      });
+      (opt.set || []).forEach(function (f) { s.flags[f] = true; });
+      (opt.unset || []).forEach(function (f) { delete s.flags[f]; });
+      (opt.next || []).forEach(function (id) { s.queue.push(id); });
+      s.seen[card.id] = true;
+      s.turn++;
+
+      var ending = this.checkEnd();
+      var result = { stats: JSON.parse(JSON.stringify(s.stats)), ending: ending };
+      this.emit('choice', { card: card, dir: dir, result: result });
+
+      if (ending) {
+        s.over = true; s.ending = ending;
+        this.current = null;
+        this.save();
+        this.emit('end', { ending: ending });
+      } else {
+        this.save();
+        this.draw();
+      }
+      return result;
+    },
+
+    checkEnd: function () {
+      var s = this.state;
+      for (var i = 0; i < STATS.length; i++) {
+        var k = STATS[i], v = s.stats[k];
+        if (v <= 0) return window.ENDINGS[k].low;
+        if (v >= 100) return window.ENDINGS[k].high;
+      }
+      return null;
+    },
+
+    // --- Kayıt -------------------------------------------------------------
+    save: function () {
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.state)); } catch (e) {}
+    },
+    load: function () {
+      try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; }
+    },
+
+    // --- Giriş: sola / sağa kaydırma --------------------------------------
+    bindInput: function () {
+      var self = this, el = this.el, x0 = null, dx = 0;
+      window.__swiped = false;
+
+      el.addEventListener('pointerdown', function (e) {
+        x0 = e.clientX; dx = 0; window.__swiped = false;
+      });
+      el.addEventListener('pointermove', function (e) {
+        if (x0 === null) return;
+        dx = e.clientX - x0;
+        self.emit('drag', { dx: dx, ratio: Math.max(-1, Math.min(1, dx / (window.innerWidth / 2))) });
+      });
+      function up() {
+        if (x0 === null) return;
+        if (Math.abs(dx) >= SWIPE_MIN) {
+          var dir = dx < 0 ? 'left' : 'right';
+          window.__swiped = true;
+          self.emit('swipe', { dir: dir, dx: dx });
+          self.choose(dir);
+        }
+        x0 = null; dx = 0;
+        self.emit('drag', { dx: 0, ratio: 0 });
+      }
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+      // Klavye (test için)
+      window.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft') self.choose('left');
+        if (e.key === 'ArrowRight') self.choose('right');
+      });
+    },
+
+    emit: function (name, detail) {
+      this.el.dispatchEvent(new CustomEvent(name, { detail: detail }));
+    }
+  };
+
+  window.Game = Game;
+})();
+</script>
+<script>
+(function () {
+  function setFullHeight() {
+    var portrait = window.innerHeight >= window.innerWidth;
+    var screenH = portrait ? Math.max(screen.height, screen.width) : Math.min(screen.height, screen.width);
+    var h = Math.max(window.innerHeight, document.documentElement.clientHeight, screenH);
+    document.documentElement.style.setProperty('--full-h', h + 'px');
+  }
+  document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+  window.addEventListener('scroll', function () { window.scrollTo(0, 0); });
+
+  if (location.hash === '#debug') {
+    var dbg = document.createElement('div');
+    dbg.style.cssText = 'position:absolute;top:60px;left:8px;z-index:9;font:12px monospace;color:#0f0;background:#000a;padding:4px';
+    document.body.appendChild(dbg);
+    setInterval(function () {
+      dbg.textContent = 'inner ' + innerWidth + 'x' + innerHeight + ' | screen ' + screen.width + 'x' + screen.height + ' | doc ' + document.documentElement.clientHeight;
+    }, 500);
+  }
+
+  setFullHeight();
+  window.addEventListener('resize', setFullHeight);
+  window.addEventListener('orientationchange', function () { setTimeout(setFullHeight, 250); });
+
+  // Dokununca duraklat / devam et (durum sınıfı olarak tutulur)
+  document.body.addEventListener('click', function () {
+    document.body.classList.toggle('paused');
+  });
+
+  // Oyun çekirdeğini başlat (arayüz henüz yok; kaydırma olayları dinleniyor)
+  Game.init(document.getElementById('stage'));
+
+  // Service worker (HTTPS gerekir)
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>
