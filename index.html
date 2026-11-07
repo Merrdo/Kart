@@ -42,11 +42,12 @@
   }
 
   /* ---- Kart ---- */
-  .stage { display: flex; align-items: center; justify-content: center; }
+  :root { --cw: min(70vw, 290px); --ch: calc(var(--cw) * 4 / 3); }
+  .stage { display: flex; align-items: center; justify-content: center; pointer-events: none; }
 
   .card {
-    width: min(70vw, 290px);
-    aspect-ratio: 3 / 4;
+    position: relative; z-index: 2; pointer-events: auto;
+    width: var(--cw); aspect-ratio: 3 / 4;
     padding: 10px;
     display: flex; flex-direction: column;
     border-radius: 24px;
@@ -54,32 +55,78 @@
     transform-origin: 50% 130%;          /* kart elde tutuluyormuş gibi alttan sallanır */
     touch-action: none;
     cursor: grab;
-    will-change: transform;
+    will-change: transform, opacity;
+    opacity: 0;
   }
-  .card, .card * { -webkit-user-drag: none; }
   .card * { pointer-events: none; }
   .card.dragging { cursor: grabbing; }
 
-  .art {
-    position: relative; flex: 1; overflow: hidden;
-    border-radius: 16px;
-    background: #b5573f;
-  }
-  .art i {                               /* düz, sakin bir güneş/daire */
+  .art { position: relative; flex: 1; overflow: hidden; border-radius: 16px; background: #b5573f; }
+  .art i {
     position: absolute; left: 50%; bottom: -24%;
     width: 78%; aspect-ratio: 1; border-radius: 50%;
-    transform: translateX(-50%);
-    background: #c8705a;
+    transform: translateX(-50%); background: #c8705a;
   }
+  .meta { padding: 14px 10px 8px; font-family: Georgia, 'Times New Roman', serif; color: #2a2520; }
+  .spk { display: block; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; opacity: .5; margin-bottom: 7px; }
+  .txt { font-size: 16px; line-height: 1.35; }
 
-  .meta { padding: 16px 10px 12px; display: grid; gap: 9px; }
-  .meta b { width: 34%; height: 6px; border-radius: 3px; background: #2a2520; }
-  .meta u { width: 66%; height: 5px; border-radius: 3px; background: rgba(42,37,32,.16); }
+  /* Seçenekler: arka planın tamamı o tarafın rengine süzülür, seçenek metni kartın üstünde belirir */
+  .side { position: absolute; inset: 0; z-index: 0; opacity: 0; pointer-events: none; will-change: opacity; }
+  .side.left {
+    background:
+      radial-gradient(95% 75% at 0% 55%, rgba(84,122,146,.55), rgba(84,122,146,.12) 62%, transparent 100%),
+      linear-gradient(90deg, rgba(84,122,146,.16), transparent 75%);
+  }
+  .side.right {
+    background:
+      radial-gradient(95% 75% at 100% 55%, rgba(200,108,82,.55), rgba(200,108,82,.12) 62%, transparent 100%),
+      linear-gradient(270deg, rgba(200,108,82,.16), transparent 75%);
+  }
+  .opt {
+    position: absolute; left: 26px; right: 26px;
+    bottom: calc(50% + var(--ch) / 2 + 28px);
+    font: 30px/1.15 Georgia, 'Times New Roman', serif; color: #f1ebe0;
+    opacity: 0; will-change: transform, opacity;
+  }
+  .side.left .opt { text-align: left; }
+  .side.right .opt { text-align: right; }
+
+  /* Gizli seçenek: yukarı/aşağı, arka planla kamufle; kart yaklaştıkça belirir ve parlar */
+  .side.hid.up   { background: radial-gradient(90% 42% at 50% 0%,   rgba(224,190,122,.42), rgba(224,190,122,.10) 60%, transparent 100%); }
+  .side.hid.down { background: radial-gradient(90% 42% at 50% 100%, rgba(224,190,122,.42), rgba(224,190,122,.10) 60%, transparent 100%); }
+  .hopt {
+    position: absolute; left: 26px; right: 26px; text-align: center;
+    font: italic 22px/1.2 Georgia, 'Times New Roman', serif; letter-spacing: .04em;
+    color: #f4e3bd;
+    text-shadow: 0 0 18px rgba(240,200,130,.7), 0 1px 0 rgba(0,0,0,.55);
+    opacity: 0; will-change: transform, opacity;
+  }
+  .side.hid.up   .hopt { top: max(28px, calc(50% - var(--ch) / 2 - 150px)); }
+  .side.hid.down .hopt { bottom: max(28px, calc(50% - var(--ch) / 2 - 150px)); }
+
+  .end {
+    position: absolute; inset: 0; z-index: 3;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    text-align: center; padding: 0 32px;
+    font-family: Georgia, 'Times New Roman', serif; color: #f1ebe0;
+    opacity: 0; transition: opacity .9s ease; pointer-events: none;
+  }
+  .end.show { opacity: 1; pointer-events: auto; }
+  .end p { font-size: 26px; line-height: 1.25; }
+  .end small { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; opacity: .45; }
 </style>
 </head>
 <body>
 <div class="stage" id="stage">
-  <div class="card" id="card"><div class="art"><i></i></div><div class="meta"><b></b><u></u></div></div>
+  <div class="side left" id="sideL"><div class="opt" id="optL"></div></div>
+  <div class="side right" id="sideR"><div class="opt" id="optR"></div></div>
+  <div class="side hid up" id="sideH"><div class="hopt" id="optH"></div></div>
+  <div class="card" id="card">
+    <div class="art"><i></i></div>
+    <div class="meta"><span class="spk" id="spk"></span><div class="txt" id="txt"></div></div>
+  </div>
+  <div class="end" id="end"><p id="endT"></p><small>Dokun ve yeniden başla</small></div>
 </div>
 
 <script>
@@ -97,6 +144,7 @@
  *     unset:   ['bayrak', ...]           // hikaye bayraklarını kaldır
  *     next:    ['kartId', ...]           // sıradaki kartları zincirle
  *   }
+ *   hidden:   { label, at:'up'|'down', effects, set, unset, next, requires }   // gizli üçüncü seçenek
  *   requires: { flags:[], notFlags:[], stat:{ army:{min:30,max:80} }, minTurn:0 }
  *   weight:   çekilme ağırlığı (varsayılan 1)
  *   once:     true ise bir kez çıkar
@@ -117,7 +165,8 @@ window.CARDS = [
     text: 'Hasat zayıf geçti. Vergiyi hafifletir misiniz?',
     left:  { label: 'Hayır',  effects: { people: -10, wealth: 8 } },
     right: { label: 'Evet',   effects: { people: 10, wealth: -8 } },
-    requires: { flags: ['tahta_cikti'] }
+    requires: { flags: ['tahta_cikti'] },
+    hidden: { label: 'Ambarı gizlice aç', at: 'up', effects: { people: 6, wealth: -3 }, set: ['ambar_acik'] }
   },
   {
     id: 'priest',
@@ -125,7 +174,8 @@ window.CARDS = [
     text: 'Eski tapınak çöküyor. Onarım için altın gerek.',
     left:  { label: 'Reddet', effects: { faith: -10 } },
     right: { label: 'Öde',    effects: { faith: 10, wealth: -10 } },
-    requires: { flags: ['tahta_cikti'] }
+    requires: { flags: ['tahta_cikti'] },
+    hidden: { label: 'Rahibi sına', at: 'down', effects: { faith: -3 }, set: ['rahip_sinandi'] }
   },
   {
     id: 'general',
@@ -133,7 +183,8 @@ window.CARDS = [
     text: 'Sınırda hareketlilik var. Askeri arttıralım mı?',
     left:  { label: 'Gerek yok', effects: { army: -8 }, set: ['sinir_savunmasiz'] },
     right: { label: 'Arttır',    effects: { army: 10, wealth: -6 }, next: ['border_raid'] },
-    requires: { flags: ['tahta_cikti'] }
+    requires: { flags: ['tahta_cikti'] },
+    hidden: { label: 'Yabancının sırrını kullan', at: 'up', requires: { flags: ['sir_biliyor'] }, effects: { army: 6 } }
   },
   {
     id: 'border_raid',
@@ -207,9 +258,9 @@ window.ENDINGS = {
     },
 
     // --- Deste -------------------------------------------------------------
-    eligible: function (card) {
-      var s = this.state, r = card.requires || {};
-      if (card.once && s.seen[card.id]) return false;
+    // Koşul kontrolü (kart ve gizli seçenek için ortak)
+    meets: function (r) {
+      var s = this.state; r = r || {};
       if (r.minTurn && s.turn < r.minTurn) return false;
       if (r.flags && !r.flags.every(function (f) { return s.flags[f]; })) return false;
       if (r.notFlags && r.notFlags.some(function (f) { return s.flags[f]; })) return false;
@@ -221,6 +272,16 @@ window.ENDINGS = {
         }
       }
       return true;
+    },
+
+    eligible: function (card) {
+      if (card.once && this.state.seen[card.id]) return false;
+      return this.meets(card.requires);
+    },
+
+    // Kartın gizli seçeneği varsa ve şartı sağlanıyorsa döner, yoksa null
+    hiddenOf: function (card) {
+      return card && card.hidden && this.meets(card.hidden.requires) ? card.hidden : null;
     },
 
     byId: function (id) {
@@ -254,7 +315,7 @@ window.ENDINGS = {
     // --- Seçim -------------------------------------------------------------
     choose: function (dir) {
       if (this.state.over || !this.current) return null;
-      var card = this.current, opt = card[dir];
+      var card = this.current, opt = dir === 'hidden' ? this.hiddenOf(card) : card[dir];
       if (!opt) return null;
       var s = this.state;
 
@@ -382,69 +443,212 @@ window.ENDINGS = {
 })();
 </script>
 <script>
-/* Kart sürükleme.
- * - Sürüklerken: kart, parmağı birebir ve gecikmesiz takip eder. Tarayıcı zaten
- *   dokunma olaylarını ekran karesine hizalar; araya ekstra animasyon koymuyoruz.
- * - Bırakınca: parmağın hızıyla süzülür, sekmeden merkeze oturur.
- * - Her karede yalnızca transform yazılır. */
+/* Kart: sürükleme, seçim bölgesi ve seçenek animasyonları.
+ *  - Kart parmağı birebir takip eder.
+ *  - Kart sağ/sol seçim bölgesindeyken bırakılırsa süzülerek çıkar ve seçenek uygulanır.
+ *    Parmak kalkmadan hiçbir şey gönderilmez; bölgeden geri çekilirse seçim iptal olur.
+ *  - Sürükledikçe arka plan o seçeneğin rengine yumuşakça geçer, seçenek metni belirir.
+ *  - Bölgeye girmeden bırakılırsa kart sekmeden merkeze döner.
+ * Her karede yalnızca transform / opacity yazılır. */
 (function () {
-  var card = document.getElementById('card');
-  var x = 0, y = 0, vx = 0, vy = 0;
-  var ox = 0, oy = 0, dragging = false;
-  var raf = 0, last = 0, trail = [];
+  var stage = document.getElementById('stage'), card = document.getElementById('card');
+  var spk = document.getElementById('spk'), txt = document.getElementById('txt');
+  var sideL = document.getElementById('sideL'), sideR = document.getElementById('sideR');
+  var optL = document.getElementById('optL'), optR = document.getElementById('optR');
+  var sideH = document.getElementById('sideH'), optH = document.getElementById('optH');
+  var endEl = document.getElementById('end'), endT = document.getElementById('endT');
+
+  var x = 0, y = 0, vx = 0, vy = 0, s = 1, o = 0;        // kartın durumu
+  var mode = 'idle';                                       // idle | drag | settle | exit | gap | enter
+  var t0 = 0, dir = 0, zone = 105;
+  var pl = 0, pr = 0, ph = 0;                              // görünen arka plan ilerlemesi (sol / sağ / gizli)
+  var axis = 'x', zoneY = 110, hidAvail = false, hidAt = 'up', nextH = null, hidArmed = false;
+  var dragging = false, ox = 0, oy = 0, trail = [];
+  var raf = 0, last = 0;
+  var pending = null, ended = null, locked = false, nextL = null, nextR = null;
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function smooth(v) { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); }
+  function calcZone() { zone = clamp(window.innerWidth * 0.27, 90, 130); zoneY = clamp(window.innerHeight * 0.14, 70, 120); }
+  function prog(px) { return smooth((Math.abs(px) - 6) / (zone - 6)); }
 
   function draw() {
-    var r = Math.max(-1, Math.min(1, x / 280)) * 8;           // en fazla 8°
-    card.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) rotate(' + r.toFixed(3) + 'deg)';
+    var r = clamp(x / 280, -1.6, 1.6) * 8;
+    card.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) rotate(' + r.toFixed(3) + 'deg) scale(' + s.toFixed(4) + ')';
+    card.style.opacity = o.toFixed(3);
+    sideL.style.opacity = pl.toFixed(3);
+    sideR.style.opacity = pr.toFixed(3);
+    var lo = clamp((pl - .15) / .6, 0, 1), ro = clamp((pr - .15) / .6, 0, 1);
+    optL.style.opacity = lo.toFixed(3);  optL.style.transform = 'translate3d(' + (-(1 - lo) * 26).toFixed(1) + 'px,0,0)';
+    optR.style.opacity = ro.toFixed(3);  optR.style.transform = 'translate3d(' + ((1 - ro) * 26).toFixed(1) + 'px,0,0)';
+    sideH.style.opacity = ph.toFixed(3);
+    optH.style.opacity = (ph * ph).toFixed(3);               // başta neredeyse görünmez, yaklaştıkça parlar
+    optH.style.transform = 'translate3d(0,' + ((hidAt === 'up' ? -1 : 1) * (1 - ph) * 12).toFixed(1) + 'px,0)';
   }
 
-  function settle(t) {                                         // bırakınca: kritik sönümlü yay
-    var dt = last ? Math.min(0.05, Math.max(0.001, (t - last) / 1000)) : 1 / 60;
-    last = t;
-    var k = 120, c = 2 * Math.sqrt(k), n = 4, h = dt / n;
-    for (var i = 0; i < n; i++) {
-      vx += (-k * x - c * vx) * h;
-      vy += (-k * y - c * vy) * h;
-      x += vx * h; y += vy * h;
-    }
-    if (Math.abs(x) < .1 && Math.abs(y) < .1 && Math.abs(vx) < 2 && Math.abs(vy) < 2) {
-      x = y = vx = vy = 0; draw(); raf = 0; last = 0; return;
-    }
-    draw();
-    raf = requestAnimationFrame(settle);
+  function applyLabels() {                                 // metin, görünmezken değişir (geçiş sırasında göz yanılmaz)
+    if (nextL !== null && pl < .15) { optL.textContent = nextL; nextL = null; }
+    if (nextR !== null && pr < .15) { optR.textContent = nextR; nextR = null; }
+    if (nextH !== null && ph < .1) { optH.textContent = nextH.label; sideH.className = 'side hid ' + nextH.at; nextH = null; }
   }
-  function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; last = 0; } }
+
+  function renderCard(c) {
+    spk.textContent = c.speaker || '';
+    txt.textContent = c.text || '';
+    nextL = c.left ? c.left.label : '';
+    nextR = c.right ? c.right.label : '';
+    var hd = Game.hiddenOf(c);
+    hidAvail = !!hd;
+    hidAt = hd && hd.at === 'down' ? 'down' : 'up';
+    nextH = hd ? { label: hd.label, at: hidAt } : { label: '', at: hidAt };
+    applyLabels();
+  }
+
+  function startEnter() {
+    x = y = vx = vy = 0; s = .95; o = 0;
+    hidArmed = false;
+    mode = 'enter'; t0 = performance.now(); locked = true; kick();
+  }
+
+  function showEnd() {
+    endT.textContent = ended ? ended.text : '';
+    endEl.classList.add('show');
+  }
+
+  function beginNext() {
+    if (pending) {
+      var c = pending; pending = null;
+      renderCard(c); startEnter();
+    } else {
+      mode = 'idle';
+      if (ended) showEnd();
+    }
+  }
+
+  function approach(cur, target, dt) {
+    var tau = target > cur ? .08 : .11;
+    return cur + (target - cur) * (1 - Math.exp(-dt / tau));
+  }
+
+  function tick(t) {
+    var dt = last ? clamp((t - last) / 1000, .001, .05) : 1 / 60;
+    last = t;
+    var busy = false, n = 4, h = dt / n, i;
+
+    if (mode === 'drag') {
+      busy = true;
+    } else if (mode === 'settle') {                         // kritik sönümlü yay: sekmeden merkeze
+      var k = 120, c = 2 * Math.sqrt(k);
+      for (i = 0; i < n; i++) {
+        vx += (-k * x - c * vx) * h; vy += (-k * y - c * vy) * h;
+        x += vx * h; y += vy * h;
+      }
+      if (Math.abs(x) < .1 && Math.abs(y) < .1 && Math.abs(vx) < 2 && Math.abs(vy) < 2) {
+        x = y = vx = vy = 0; mode = 'idle';
+      } else busy = true;
+    } else if (mode === 'exit') {                           // seçim: kart süzülerek çıkar ve silikleşir
+      var ke = 70, ce = 2 * Math.sqrt(ke) * .9;
+      if (axis === 'x') {
+        var far = dir * (window.innerWidth * .5 + card.offsetWidth + 80);
+        for (i = 0; i < n; i++) {
+          vx += (ke * (far - x) - ce * vx) * h; vy -= vy * 3 * h;
+          x += vx * h; y += vy * h;
+        }
+        o = 1 - smooth((Math.abs(x) - zone) / (window.innerWidth * .5));
+      } else {
+        var farY = dir * (window.innerHeight * .5 + card.offsetHeight + 80);
+        for (i = 0; i < n; i++) {
+          vy += (ke * (farY - y) - ce * vy) * h; vx -= vx * 3 * h;
+          x += vx * h; y += vy * h;
+        }
+        o = 1 - smooth((Math.abs(y) - zoneY) / (window.innerHeight * .35));
+      }
+      if (o <= .01) { o = 0; mode = 'gap'; t0 = t; }
+      busy = true;
+    } else if (mode === 'gap') {                            // arka plan sakinleşir, sonra yeni kart
+      if (t - t0 > 260) beginNext(); else busy = true;
+    } else if (mode === 'enter') {
+      var kk = clamp((t - t0) / 560, 0, 1), e = 1 - Math.pow(1 - kk, 3);
+      o = e; s = .95 + .05 * e; y = 16 * (1 - e);
+      if (kk >= 1) { mode = 'idle'; locked = false; o = 1; s = 1; y = 0; } else busy = true;
+    }
+
+    var tl = 0, tr = 0, th = 0;                             // arka plan hedefleri
+    var live = mode === 'drag' || mode === 'settle';
+    if (live || (mode === 'exit' && axis === 'x')) {
+      var p = prog(x);
+      if (x > 0) tr = p; else tl = p;
+    }
+    if (hidAvail && (live || (mode === 'exit' && axis === 'y'))) {
+      th = smooth(((hidAt === 'up' ? -y : y) - 10) / (zoneY - 10));
+    }
+    if (mode === 'drag') {                                  // gizli bölgeye girince tek, hafif titreşim
+      if (th >= .999 && !hidArmed) { hidArmed = true; if (navigator.vibrate) { try { navigator.vibrate(12); } catch (_) {} } }
+      else if (th < .8) hidArmed = false;
+    }
+    pl = approach(pl, tl, dt); pr = approach(pr, tr, dt); ph = approach(ph, th, dt);
+    if (Math.abs(pl - tl) > .002 || Math.abs(pr - tr) > .002 || Math.abs(ph - th) > .002) busy = true;
+    else { pl = tl; pr = tr; ph = th; }
+
+    applyLabels();
+    draw();
+    if (busy) raf = requestAnimationFrame(tick); else { raf = 0; last = 0; }
+  }
+  function kick() { if (!raf) { last = 0; raf = requestAnimationFrame(tick); } }
+
+  function commit(name, e) {
+    dragging = false;
+    card.classList.remove('dragging');
+    try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+    var a = trail[0], b = trail[trail.length - 1], dt = (b.t - a.t) / 1000;
+    vx = dt > .01 ? clamp((b.x - a.x) / dt, -1800, 1800) : 0;
+    vy = dt > .01 ? clamp((b.y - a.y) / dt, -1800, 1800) : 0;
+    if (name === 'hidden') { axis = 'y'; dir = hidAt === 'up' ? -1 : 1; }
+    else { axis = 'x'; dir = name === 'right' ? 1 : -1; }
+    locked = true; mode = 'exit';
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
+    Game.choose(name);                                      // seçenek uygulanır; sıradaki kart 'card' olayıyla gelir
+    kick();
+  }
 
   card.addEventListener('pointerdown', function (e) {
-    e.stopPropagation();
-    stop();                                                    // dönerken tutulursa kaldığı yerden devam
-    dragging = true;
+    e.stopPropagation();                                    // motorun kendi kaydırma girişi devre dışı
+    if (locked || !Game.current || (mode !== 'idle' && mode !== 'settle')) return;
+    mode = 'drag'; dragging = true;
     card.classList.add('dragging');
     card.setPointerCapture(e.pointerId);
     ox = e.clientX - x; oy = e.clientY - y;
     trail = [{ x: e.clientX, y: e.clientY, t: e.timeStamp }];
+    kick();
   });
 
   card.addEventListener('pointermove', function (e) {
     if (!dragging) return;
     x = e.clientX - ox; y = e.clientY - oy;
-    draw();
     trail.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
     while (trail.length > 2 && e.timeStamp - trail[0].t > 80) trail.shift();
   });
 
   function release(e) {
     if (!dragging) return;
+    if (e.type === 'pointerup') {                              // bir seçim bölgesinde bırakıldı: seçenek uygulanır
+      var nx = Math.abs(x) / zone;
+      var ny = hidAvail ? (hidAt === 'up' ? -y : y) / zoneY : 0;
+      if (Math.max(nx, ny) >= 1) {
+        commit(ny >= nx ? 'hidden' : (x > 0 ? 'right' : 'left'), e);
+        return;
+      }
+    }
     dragging = false;
     card.classList.remove('dragging');
     try { card.releasePointerCapture(e.pointerId); } catch (_) {}
     var a = trail[0], b = trail[trail.length - 1], dt = (b.t - a.t) / 1000;
     vx = vy = 0;
-    if (dt > 0.01 && e.timeStamp - b.t < 60) {                 // duraklayıp bırakırsa hız sıfır
-      vx = Math.max(-1800, Math.min(1800, (b.x - a.x) / dt));
-      vy = Math.max(-1800, Math.min(1800, (b.y - a.y) / dt));
+    if (dt > .01 && e.timeStamp - b.t < 60) {
+      vx = clamp((b.x - a.x) / dt, -1800, 1800);
+      vy = clamp((b.y - a.y) / dt, -1800, 1800);
     }
-    raf = requestAnimationFrame(settle);
+    mode = 'settle'; kick();
   }
   card.addEventListener('pointerup', release);
   card.addEventListener('pointercancel', release);
@@ -452,7 +656,29 @@ window.ENDINGS = {
   card.addEventListener('dragstart', function (e) { e.preventDefault(); });
   card.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  draw();
+  // Oyun olayları
+  stage.addEventListener('card', function (e) {
+    if (mode === 'idle' && !locked) { renderCard(e.detail.card); startEnter(); }
+    else pending = e.detail.card;
+  });
+  stage.addEventListener('end', function (e) {
+    ended = e.detail.ending;
+    if (mode === 'idle' && !locked) { locked = true; o = 0; draw(); showEnd(); }
+  });
+  endEl.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+  endEl.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (!ended) return;
+    ended = null; endEl.classList.remove('show');
+    locked = false; mode = 'idle';
+    Game.reset();
+  });
+
+  window.addEventListener('resize', calcZone);
+  calcZone();
+  if (Game.state && Game.state.over) { ended = Game.state.ending; locked = true; draw(); showEnd(); }
+  else if (Game.current) { renderCard(Game.current); startEnter(); }
+  else draw();
 })();
 </script>
 </body>
