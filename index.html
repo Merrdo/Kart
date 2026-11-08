@@ -203,29 +203,156 @@
  *   once:     true ise bir kez çıkar
  * }
  */
+/* CARDS:BEGIN */
 window.CARDS = [
-  { id:'q1', speaker:'Uğultu', clarity:0.04, text:'…uyan… Beni du…yu…yor musun? Gözlerini aç.',
-    left:  { label:'Sus', effects:{}, next: ['q2'] },
-    right: { label:'Evet', effects:{}, next: ['q2'] } },
-  { id:'q2', speaker:'Boğuk bir ses', clarity:0.15, text:'Dur. Adını söyle bana.',
-    left:  { label:'Hatırlamıyorum', effects:{}, next: ['q3'] },
-    right: { label:'Söylemem', effects:{}, next: ['q3'] } },
-  { id:'q3', speaker:'Boğuk bir ses', clarity:0.3, text:'Dün gece… neredeydin? Düşün.',
-    left:  { label:'Hayır', effects:{}, next: ['q4'] },
-    right: { label:'Hatırlıyorum', effects:{}, next: ['q4'], set:['hatirliyor'] } },
-  { id:'q4', speaker:'Bir erkek sesi', clarity:0.5, text:'Yanındaki adam kimdi? Bana onu anlat.',
-    left:  { label:'Tanımıyorum', effects:{}, next: ['q5'] },
-    right: { label:'Anlatırım', effects:{}, next: ['q5'] } },
-  { id:'q5', speaker:'Bir gölge', clarity:0.7, text:'Bir şey saklıyorsun. Gözlerinden belli.',
-    left:  { label:'Saklamıyorum', effects:{}, next: ['q6'] },
-    right: { label:'Saklıyorum', effects:{}, next: ['q6'] } },
-  { id:'q6', speaker:'???', clarity:0.88, text:'Bana bak. Şimdi söyle: beni tanıdın mı?',
-    left:  { label:'Hayır', effects:{}, next: ['q7'] },
-    right: { label:'Belki', effects:{}, next: ['q7'] } },
-  { id:'q7', speaker:'???', clarity:1, text:'Işık kısılıyor. Yarın devam ederiz.',
-    left:  { label:'…', effects:{} },
-    right: { label:'…', effects:{} } }
+  {
+    "id": "q1",
+    "speaker": "???",
+    "clarity": 0.04,
+    "text": "Hey, orda mısın?  ==ah işte burdasın ==",
+    "arc": "ana",
+    "left": {
+      "label": "Sus",
+      "effects": {},
+      "next": [
+        "q3"
+      ]
+    },
+    "right": {
+      "label": "Evet",
+      "effects": {},
+      "next": [
+        "q2"
+      ]
+    }
+  },
+  {
+    "id": "q2",
+    "speaker": "Boğuk bir ses",
+    "clarity": 0.15,
+    "text": "Dur. Adını söyle bana.",
+    "arc": "ana",
+    "left": {
+      "label": "Hatırlamıyorum",
+      "effects": {},
+      "next": [
+        "q3"
+      ]
+    },
+    "right": {
+      "label": "Söylemem",
+      "effects": {},
+      "next": [
+        "q3"
+      ]
+    }
+  },
+  {
+    "id": "q3",
+    "speaker": "ihtişamlı ses",
+    "clarity": 0.3,
+    "text": "Dün gece… neredeydin? Düşün.",
+    "arc": "ana",
+    "left": {
+      "label": "Hayır",
+      "effects": {},
+      "next": [
+        "q4"
+      ]
+    },
+    "right": {
+      "label": "Hatırlıyorum",
+      "effects": {},
+      "next": [
+        "q4"
+      ],
+      "set": [
+        "hatirliyor"
+      ]
+    }
+  },
+  {
+    "id": "q4",
+    "speaker": "Bir erkek sesi",
+    "clarity": 0.5,
+    "text": "Yanındaki adam kimdi? Bana onu anlat.",
+    "arc": "ana",
+    "left": {
+      "label": "Tanımıyorum",
+      "effects": {},
+      "next": [
+        "q5"
+      ]
+    },
+    "right": {
+      "label": "Anlatırım",
+      "effects": {},
+      "next": [
+        "q5"
+      ]
+    }
+  },
+  {
+    "id": "q5",
+    "speaker": "Bir gölge",
+    "clarity": 0.7,
+    "text": "Bir şey saklıyorsun. Gözlerinden belli.",
+    "arc": "ana",
+    "left": {
+      "label": "Saklamıyorum",
+      "effects": {},
+      "next": [
+        "q6"
+      ]
+    },
+    "right": {
+      "label": "Saklıyorum",
+      "effects": {},
+      "next": [
+        "q6"
+      ]
+    }
+  },
+  {
+    "id": "q6",
+    "speaker": "???",
+    "clarity": 0.88,
+    "text": "Bana bak. Şimdi söyle: beni tanıdın mı?",
+    "arc": "ana",
+    "left": {
+      "label": "Hayır",
+      "effects": {},
+      "next": [
+        "q7"
+      ]
+    },
+    "right": {
+      "label": "Belki",
+      "effects": {},
+      "next": [
+        "q7"
+      ]
+    }
+  },
+  {
+    "id": "q7",
+    "speaker": "???",
+    "clarity": 1,
+    "text": "Işık kısılıyor. Yarın devam ederiz.",
+    "arc": "ana",
+    "left": {
+      "label": "…",
+      "effects": {},
+      "next": []
+    },
+    "right": {
+      "label": "…",
+      "effects": {},
+      "next": []
+    }
+  }
 ];
+/* CARDS:END */
 
 /* Oyun sonları: bir istatistik 0'a ya da 100'e değince tetiklenir. */
 window.ENDINGS = {
