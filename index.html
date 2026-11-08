@@ -132,6 +132,41 @@
   .deck i:nth-child(1) { transform:translateY(34px) scale(.88); background-color:#0d1115; }
   .deck i:nth-child(2) { transform:translateY(17px) scale(.94); background-color:#11161a; }
   .deck i:nth-child(3) { transform:none; background-color:#161b20; }
+
+  /* ---- Ana menü ---- */
+  .menu {
+    position: absolute; top: 0; left: 0; z-index: 10;
+    width: 100%; height: var(--full-h, 100%);
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: Georgia, 'Times New Roman', serif; color: #efe9dc;
+    opacity: 1; visibility: visible;
+    transition: opacity .35s ease;
+  }
+  .menu.hidden { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s ease, visibility 0s linear .3s; }
+  .menu h1 { font-weight: 400; font-size: clamp(34px, 11vw, 46px); line-height: 1.1; letter-spacing: .06em; padding-left: .06em; }
+  .menu .rule { width: 28px; height: 1px; background: #efe9dc; opacity: .25; margin: 26px 0 34px; }
+  .menu-btn {
+    appearance: none; -webkit-appearance: none; background: none; color: inherit; cursor: pointer;
+    font: 12px Georgia, 'Times New Roman', serif; letter-spacing: .32em; text-transform: uppercase;
+    padding: 15px 30px 15px 34px; border: 1px solid rgba(239,233,220,.28); border-radius: 999px;
+    transition: background .2s ease, border-color .2s ease;
+  }
+  .menu-btn:active { background: rgba(239,233,220,.08); border-color: rgba(239,233,220,.5); }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .menu h1    { animation: rise .8s ease both; }
+  .menu .rule { animation: rise .8s ease .12s both; }
+  .menu-btn   { animation: rise .8s ease .24s both; }
+
+  /* Oyun içi: sol üstte sönük "Menü" düğmesi (iki dokunuşla çıkış) */
+  .exit {
+    position: absolute; z-index: 5; left: 8px; top: calc(env(safe-area-inset-top, 0px) + 8px);
+    appearance: none; -webkit-appearance: none; background: none; border: 0; cursor: pointer;
+    padding: 12px; font: 11px Georgia, 'Times New Roman', serif; letter-spacing: .26em; text-transform: uppercase;
+    color: #efe9dc; opacity: 0; pointer-events: none; transition: opacity .35s ease;
+  }
+  body.playing .exit { opacity: .4; pointer-events: auto; }
+  body.playing .exit.armed { opacity: .9; }
 </style>
 </head>
 <body>
@@ -183,6 +218,14 @@
   <div class="end" id="end"><p id="endT"></p><small>Dokun ve yeniden başla</small></div>
 </div>
 
+<button class="exit" id="exitBtn" type="button">Menü</button>
+
+<div class="menu" id="menu">
+  <h1>Akan Yazı</h1>
+  <div class="rule"></div>
+  <button class="menu-btn" id="playBtn" type="button">Başla</button>
+</div>
+
 <script>
 /* Kart verisi — hikaye burada yazılır, motor (game.js) bunu okur.
  *
@@ -203,156 +246,29 @@
  *   once:     true ise bir kez çıkar
  * }
  */
-/* CARDS:BEGIN */
 window.CARDS = [
-  {
-    "id": "q1",
-    "speaker": "???",
-    "clarity": 0.04,
-    "text": "Hey, orda mısın?  ==ah işte burdasın ==",
-    "arc": "ana",
-    "left": {
-      "label": "Sus",
-      "effects": {},
-      "next": [
-        "q3"
-      ]
-    },
-    "right": {
-      "label": "Evet",
-      "effects": {},
-      "next": [
-        "q2"
-      ]
-    }
-  },
-  {
-    "id": "q2",
-    "speaker": "Boğuk bir ses",
-    "clarity": 0.15,
-    "text": "Dur. Adını söyle bana.",
-    "arc": "ana",
-    "left": {
-      "label": "Hatırlamıyorum",
-      "effects": {},
-      "next": [
-        "q3"
-      ]
-    },
-    "right": {
-      "label": "Söylemem",
-      "effects": {},
-      "next": [
-        "q3"
-      ]
-    }
-  },
-  {
-    "id": "q3",
-    "speaker": "ihtişamlı ses",
-    "clarity": 0.3,
-    "text": "Dün gece… neredeydin? Düşün.",
-    "arc": "ana",
-    "left": {
-      "label": "Hayır",
-      "effects": {},
-      "next": [
-        "q4"
-      ]
-    },
-    "right": {
-      "label": "Hatırlıyorum",
-      "effects": {},
-      "next": [
-        "q4"
-      ],
-      "set": [
-        "hatirliyor"
-      ]
-    }
-  },
-  {
-    "id": "q4",
-    "speaker": "Bir erkek sesi",
-    "clarity": 0.5,
-    "text": "Yanındaki adam kimdi? Bana onu anlat.",
-    "arc": "ana",
-    "left": {
-      "label": "Tanımıyorum",
-      "effects": {},
-      "next": [
-        "q5"
-      ]
-    },
-    "right": {
-      "label": "Anlatırım",
-      "effects": {},
-      "next": [
-        "q5"
-      ]
-    }
-  },
-  {
-    "id": "q5",
-    "speaker": "Bir gölge",
-    "clarity": 0.7,
-    "text": "Bir şey saklıyorsun. Gözlerinden belli.",
-    "arc": "ana",
-    "left": {
-      "label": "Saklamıyorum",
-      "effects": {},
-      "next": [
-        "q6"
-      ]
-    },
-    "right": {
-      "label": "Saklıyorum",
-      "effects": {},
-      "next": [
-        "q6"
-      ]
-    }
-  },
-  {
-    "id": "q6",
-    "speaker": "???",
-    "clarity": 0.88,
-    "text": "Bana bak. Şimdi söyle: beni tanıdın mı?",
-    "arc": "ana",
-    "left": {
-      "label": "Hayır",
-      "effects": {},
-      "next": [
-        "q7"
-      ]
-    },
-    "right": {
-      "label": "Belki",
-      "effects": {},
-      "next": [
-        "q7"
-      ]
-    }
-  },
-  {
-    "id": "q7",
-    "speaker": "???",
-    "clarity": 1,
-    "text": "Işık kısılıyor. Yarın devam ederiz.",
-    "arc": "ana",
-    "left": {
-      "label": "…",
-      "effects": {},
-      "next": []
-    },
-    "right": {
-      "label": "…",
-      "effects": {},
-      "next": []
-    }
-  }
+  { id:'q1', speaker:'Uğultu', clarity:0.04, text:'…uyan… Beni du…yu…yor musun? Gözlerini aç.',
+    left:  { label:'Sus', effects:{}, next: ['q2'] },
+    right: { label:'Evet', effects:{}, next: ['q2'] } },
+  { id:'q2', speaker:'Boğuk bir ses', clarity:0.15, text:'Dur. Adını söyle bana.',
+    left:  { label:'Hatırlamıyorum', effects:{}, next: ['q3'] },
+    right: { label:'Söylemem', effects:{}, next: ['q3'] } },
+  { id:'q3', speaker:'Boğuk bir ses', clarity:0.3, text:'Dün gece… neredeydin? Düşün.',
+    left:  { label:'Hayır', effects:{}, next: ['q4'] },
+    right: { label:'Hatırlıyorum', effects:{}, next: ['q4'], set:['hatirliyor'] } },
+  { id:'q4', speaker:'Bir erkek sesi', clarity:0.5, text:'Yanındaki adam kimdi? Bana onu anlat.',
+    left:  { label:'Tanımıyorum', effects:{}, next: ['q5'] },
+    right: { label:'Anlatırım', effects:{}, next: ['q5'] } },
+  { id:'q5', speaker:'Bir gölge', clarity:0.7, text:'Bir şey saklıyorsun. Gözlerinden belli.',
+    left:  { label:'Saklamıyorum', effects:{}, next: ['q6'] },
+    right: { label:'Saklıyorum', effects:{}, next: ['q6'] } },
+  { id:'q6', speaker:'???', clarity:0.88, text:'Bana bak. Şimdi söyle: beni tanıdın mı?',
+    left:  { label:'Hayır', effects:{}, next: ['q7'] },
+    right: { label:'Belki', effects:{}, next: ['q7'] } },
+  { id:'q7', speaker:'???', clarity:1, text:'Işık kısılıyor. Yarın devam ederiz.',
+    left:  { label:'…', effects:{} },
+    right: { label:'…', effects:{} } }
 ];
-/* CARDS:END */
 
 /* Oyun sonları: bir istatistik 0'a ya da 100'e değince tetiklenir. */
 window.ENDINGS = {
@@ -388,9 +304,8 @@ window.ENDINGS = {
 
     init: function (el) {
       this.el = el;
-      this.state = this.load() || this.fresh();
+      this.state = this.fresh();   // her oyun ana menüden baştan başlar; kayıttan devam yok
       this.bindInput();
-      if (!this.state.over) this.draw();
     },
 
     fresh: function () {
@@ -576,8 +491,55 @@ window.ENDINGS = {
     document.body.classList.toggle('paused');
   });
 
-  // Oyun çekirdeğini başlat (arayüz henüz yok; kaydırma olayları dinleniyor)
+  // Oyun çekirdeğini başlat (oyun menüden "Başla" ile açılır)
   Game.init(document.getElementById('stage'));
+
+  // Ana menü: Başla → oyun baştan başlar. Menü → (iki dokunuş) oyundan çıkılır, ilerleme silinir.
+  var menu = document.getElementById('menu');
+  var playBtn = document.getElementById('playBtn');
+  var exitBtn = document.getElementById('exitBtn');
+  var busy = false, armTimer = 0;
+
+  function disarm() {
+    clearTimeout(armTimer);
+    exitBtn.classList.remove('armed');
+    exitBtn.textContent = 'Menü';
+  }
+
+  function startGame() {
+    if (busy) return;
+    busy = true;
+    menu.classList.add('hidden');
+    setTimeout(function () {
+      GameUI.reset();            // arayüz durumunu sıfırla
+      Game.reset();              // yeni oyun: ilk kart gelir
+      document.body.classList.add('playing');
+      busy = false;
+    }, 320);
+  }
+
+  function exitToMenu() {
+    if (busy) return;
+    busy = true;
+    disarm();
+    document.body.classList.remove('playing');
+    menu.classList.remove('hidden');
+    setTimeout(function () {     // menü tamamen örtülünce oyunu temizle
+      Game.current = null;
+      Game.state = Game.fresh();
+      GameUI.reset();
+      busy = false;
+    }, 380);
+  }
+
+  playBtn.addEventListener('click', function (e) { e.stopPropagation(); startGame(); });
+  exitBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (exitBtn.classList.contains('armed')) { exitToMenu(); return; }
+    exitBtn.classList.add('armed');
+    exitBtn.textContent = 'Çıkılsın mı?';
+    armTimer = setTimeout(disarm, 2200);
+  });
 
   // Service worker (HTTPS gerekir)
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
@@ -794,6 +756,21 @@ window.Scene = {
     locked = false; mode = 'idle';
     Game.reset();
   });
+
+  // Menüye çıkıldığında / yeni oyun başlarken arayüzü tamamen sıfırlar
+  function resetUI() {
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    last = 0;
+    x = y = vx = vy = 0; s = 1; o = 0; pl = pr = 0;
+    mode = 'idle'; locked = false; dragging = false;
+    pending = null; ended = null; nextL = null; nextR = null;
+    optL.textContent = ''; optR.textContent = '';
+    card.classList.remove('dragging');
+    endEl.classList.remove('show');
+    document.getElementById('meta').style.opacity = '';
+    draw();
+  }
+  window.GameUI = { reset: resetUI };
 
   window.addEventListener('resize', calcZone);
   calcZone();
