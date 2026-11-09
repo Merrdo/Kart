@@ -215,24 +215,20 @@ body.playing .inv:not(.away).open .inv-in{ opacity:1; transform:none; visibility
 
 .panes{ display:grid; }
 .shelf{
-  grid-area:1/1; position:relative; display:flex; gap:12px; overflow-x:auto; overflow-y:hidden; overscroll-behavior:contain; touch-action:pan-x;
-  padding:56px 22px 6px; scrollbar-width:none; pointer-events:none; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+  grid-area:1/1; position:relative; height:calc(var(--iw) + 62px); overflow:hidden; touch-action:none; pointer-events:none;
   transition:opacity .4s ease, transform .5s var(--ease); will-change:transform,opacity;
 }
-.shelf::-webkit-scrollbar{ display:none; }
 .shelf.many{ -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent); mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent); }
 .inv.open .shelf:not(.off){ pointer-events:auto; }
 .shelf.off{ opacity:0; }
 #shelf.off{ transform:translate3d(-30px,0,0); } #fxShelf.off{ transform:translate3d(30px,0,0); }
 .shelf.empty::before{ content:attr(data-empty); position:absolute; left:0; right:0; top:calc(56px + var(--iw) / 2 - 9px); text-align:center;
   font:italic 14px/1.3 Georgia,'Times New Roman',serif; letter-spacing:.08em; color:#efe9dc; opacity:.35; }
-.shelf.fxp{ --ring:#e8836a; --glow:rgba(232,131,106,.32); }
 
 /* Katman 1 .ic: yerleşim + snap | 2 .lift: kaydırmaya bağlı yelpaze | 3 .sel: seçim hareketi | 4 .face: çizim */
-.ic{ flex:none; width:var(--iw); aspect-ratio:1; padding:0; border:0; background:none; cursor:pointer; position:relative;
-  scroll-snap-align:center; -webkit-appearance:none; appearance:none; -webkit-tap-highlight-color:transparent; }
+.ic{ position:absolute; left:50%; top:56px; margin-left:calc(var(--iw) / -2); width:var(--iw); aspect-ratio:1; cursor:pointer; -webkit-tap-highlight-color:transparent; outline:none; }
+.ic.on{ z-index:200 !important; }
 .lift{ position:absolute; inset:0; transform-origin:50% 100%; will-change:transform,opacity; }
-.shelf.ease .lift{ transition:transform .5s var(--ease), opacity .5s ease; }
 .sel{ position:absolute; inset:0; transform-origin:50% 100%; will-change:transform; transition:transform .55s var(--ease), opacity .35s ease; }
 .ic:active:not(.on) .sel{ transform:translateY(-6px) scale(1.03); transition-duration:.18s; }
 .shelf.pick .ic:not(.on) .sel{ transform:scale(.95); }
@@ -240,7 +236,6 @@ body.playing .inv:not(.away).open .inv-in{ opacity:1; transform:none; visibility
 .ic.gone .sel{ opacity:0; transform:scale(.6); }
 .ic .face{ position:absolute; inset:0; border-radius:calc(var(--iw) * .15); overflow:hidden; background:#1b2127;
   box-shadow:0 8px 18px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.07); }
-.fxp .ic .face{ background:#2b1618; box-shadow:0 8px 18px rgba(0,0,0,.65), inset 0 0 0 1.5px rgba(222,120,98,.55); }
 .ic .face svg{ display:block; width:100%; height:100%; pointer-events:none; }
 .ic .face::after{ content:""; position:absolute; inset:0; background:#000; opacity:0; transition:opacity .4s ease; }
 .shelf.pick .ic:not(.on) .face::after{ opacity:.5; }
@@ -990,62 +985,74 @@ window.Scene = {
     fitSlot();
   }
 
-  /* ---- Kaydırmalı yelpaze (her sayfa için bir tane) ---- */
+  /* ---- Yelpaze: yerel kaydırma yok; sürükleme parmağı 1:1 izler, bırakınca yay fiziğiyle en yakın karta oturur ---- */
   function Carousel(el) {
-    var c = { el: el, ids: [], held: null }, pitch = 120, tick = 0, easeT = 0;
+    var c = { el: el, ids: [], held: null };
+    var pitch = 120, many = false, pos = 0, vel = 0, target = 0, raf = 0, last = 0, drag = null, hold = false, block = false;
+    function cl(v, a, b) { return Math.max(a, Math.min(b, v)); }
+    function n() { return el.children.length; }
+    function render() {                        // merkeze uzaklığa göre konum / eğim / ölçek / saydamlık
+      var kids = el.children;
+      for (var i = 0; i < kids.length; i++) {
+        var k = kids[i], d = i - pos, a = Math.min(Math.abs(d), 2.2), x = d * pitch + (k._off || 0), l = k.firstChild;
+        l.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + (a * 5).toFixed(2) + 'px,0) rotate(' + cl(d * 3, -6, 6).toFixed(2) + 'deg) scale(' + (1 - .07 * a).toFixed(3) + ')';
+        l.style.opacity = (1 - .4 * Math.max(0, a - 1)).toFixed(3);
+        k.style.zIndex = 100 - Math.round(a * 10);
+      }
+    }
+    function frame(t) {
+      raf = 0; var dt = Math.min(.034, (t - last) / 1000 || .016), busy = false; last = t;
+      if (!drag && !hold) {
+        var steps = Math.ceil(dt / .0167), h = dt / steps;
+        for (var s2 = 0; s2 < steps; s2++) { vel += (-190 * (pos - target) - 27.6 * vel) * h; pos += vel * h; }
+        if (Math.abs(pos - target) < .0008 && Math.abs(vel) < .01) { pos = target; vel = 0; } else busy = true;
+      }
+      var f = Math.exp(-dt * 9), kids = el.children;
+      for (var i = 0; i < kids.length; i++) { var k = kids[i]; if (k._off) { k._off *= f; if (Math.abs(k._off) < .3) k._off = 0; else busy = true; } }
+      render(); if (busy) kick();
+    }
+    function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+    c.layout = function () {
+      var kids = el.children, m = kids.length;
+      el.classList.toggle('empty', !m);
+      if (!m) { many = false; el.classList.remove('many'); return; }
+      pitch = kids[0].offsetWidth + GAP;
+      many = m * pitch - GAP > el.clientWidth - SIDE * 2;
+      el.classList.toggle('many', many);
+      target = many ? cl(Math.round(target), 0, m - 1) : (m - 1) / 2;
+      kick();
+    };
+    c.update = render;
+    c.soft = function () { c.layout(); render(); };
+    c.goto = function (i) { if (!many || i < 0) return; target = cl(i, 0, n() - 1); kick(); };
+    c.center = function (k) { c.goto([].indexOf.call(el.children, k)); };
+    c.node = function (id) { return el.querySelector('[data-id="' + id + '"]'); };
     c.make = function (id) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'ic'; b.setAttribute('data-id', id);
+      var b = document.createElement('div');
+      b.className = 'ic'; b.setAttribute('role', 'button'); b.setAttribute('data-id', id);
       b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', nm(id));
       b.innerHTML = '<div class="lift"><div class="sel"><div class="face">' + svgFor(id) + '</div><div class="halo"></div></div></div>';
       return b;
     };
-    c.layout = function () {
-      var kids = el.children, n = kids.length;
-      el.classList.toggle('empty', !n);
-      if (!n) { el.classList.remove('many'); return; }
-      var W = el.clientWidth, iw = kids[0].offsetWidth; pitch = iw + GAP;
-      var total = n * pitch - GAP, fits = total <= W - SIDE * 2;
-      var pad = Math.max(SIDE, (W - (fits ? total : iw)) / 2);
-      el.style.paddingLeft = el.style.paddingRight = pad + 'px';
-      el.classList.toggle('many', !fits);
-      [].forEach.call(kids, function (k) { k._c = k.offsetLeft + iw / 2; });
+    c.build = function () {
+      el.innerHTML = ''; c.ids.forEach(function (id) { el.appendChild(c.make(id)); });
+      c.layout(); pos = target; vel = 0; render();
     };
-    c.update = function () {                  // merkeze uzaklığa göre ölçek / eğim / saydamlık
-      var m = el.scrollLeft + el.clientWidth / 2;
-      [].forEach.call(el.children, function (k) {
-        var d = (k._c - m) / pitch, a = Math.min(Math.abs(d), 2.2);
-        var r = Math.max(-6, Math.min(6, d * 3)), sc = 1 - .07 * a, o = 1 - .4 * Math.max(0, a - 1), l = k.firstChild;
-        l.style.transform = 'translate3d(0,' + (a * 5).toFixed(2) + 'px,0) rotate(' + r.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
-        l.style.opacity = o.toFixed(3);
-      });
-    };
-    c.soft = function () {
-      el.classList.add('ease'); c.layout(); c.update();
-      clearTimeout(easeT); easeT = setTimeout(function () { el.classList.remove('ease'); }, 600);
-    };
-    c.center = function (k) { if (el.classList.contains('many')) el.scrollTo({ left: k._c - el.clientWidth / 2, behavior: 'smooth' }); };
-    c.reflow = function (mutate) {            // FLIP: kartlar yeni yerlerine kayarak geçer
-      var old = [].slice.call(el.children), from = old.map(function (k) { return k.getBoundingClientRect().left; });
-      mutate(); c.soft();
-      old.forEach(function (k, i) {
-        if (!k.parentNode || k.classList.contains('gone')) return;
-        var dx = from[i] - k.getBoundingClientRect().left;
-        if (Math.abs(dx) > 1 && k.animate) k.animate([{ transform: 'translateX(' + dx + 'px)' }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.22,.85,.3,1)' });
-      });
-    };
-    c.node = function (id) { return el.querySelector('[data-id="' + id + '"]'); };
-    c.build = function () { el.innerHTML = ''; c.ids.forEach(function (id) { el.appendChild(c.make(id)); }); c.layout(); c.update(); };
     c.add = function (id) {
       if (c.ids.indexOf(id) >= 0) return false;
-      c.ids.push(id); var b = c.make(id);
-      c.reflow(function () { el.appendChild(b); }); c.center(b); return true;
+      c.ids.push(id); el.appendChild(c.make(id)); c.layout(); render(); c.goto(n() - 1); return true;
     };
     c.remove = function (id) {
       var i = c.ids.indexOf(id); if (i < 0) return false;
       c.ids.splice(i, 1); var b = c.node(id); if (!b) return true;
-      b.classList.add('gone');
-      setTimeout(function () { c.reflow(function () { if (b.parentNode) b.parentNode.removeChild(b); }); }, 360);
+      b.classList.add('gone'); b.style.pointerEvents = 'none';
+      setTimeout(function () {
+        var kids = [].slice.call(el.children), at = kids.indexOf(b); if (at < 0) return;
+        var before = kids.map(function (k, j) { return (j - pos) * pitch + (k._off || 0); });
+        el.removeChild(b); c.layout();          // kalanlar bulundukları yerden yeni yerlerine süzülür
+        [].forEach.call(el.children, function (k, j) { k._off = before[j < at ? j : j + 1] - (j - pos) * pitch; });
+        kick();
+      }, 360);
       return true;
     };
     c.mark = function (id) {
@@ -1055,10 +1062,42 @@ window.Scene = {
       });
       el.classList.toggle('pick', !!id);
     };
-    el.addEventListener('scroll', function () {
-      if (el.classList.contains('ease')) el.classList.remove('ease');
-      if (!tick) { tick = 1; requestAnimationFrame(function () { tick = 0; c.update(); }); }
-    }, { passive: true });
+
+    /* sürükleme */
+    function rubber(p) { var m = n() - 1; return p < 0 ? p * .38 : p > m ? m + (p - m) * .38 : p; }
+    el.addEventListener('pointerdown', function (e) {
+      if (!many || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      drag = { id: e.pointerId, x0: e.clientX, p0: pos, moved: false, tr: [{ x: e.clientX, t: e.timeStamp }] };
+      hold = true; vel = 0;                    // hareket varsa parmak değince anında durur, bırakınca yumuşakça devam eder
+    });
+    el.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x0;
+      if (!drag.moved) {
+        if (Math.abs(dx) < 6) return;
+        drag.moved = true; drag.x0 = e.clientX; drag.p0 = pos; dx = 0;
+        try { el.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+      pos = rubber(drag.p0 - dx / pitch);
+      drag.tr.push({ x: e.clientX, t: e.timeStamp });
+      while (drag.tr.length > 2 && e.timeStamp - drag.tr[0].t > 90) drag.tr.shift();
+      render();
+    });
+    function release(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var d = drag; drag = null; hold = false; var m = n() - 1;
+      if (d.moved) {
+        try { el.releasePointerCapture(d.id); } catch (_) {}
+        block = true; setTimeout(function () { block = false; }, 60);
+        var a = d.tr[0], b = d.tr[d.tr.length - 1], dt = (b.t - a.t) / 1000, v = 0;
+        if (dt > .01 && e.timeStamp - b.t < 90) v = cl(-((b.x - a.x) / pitch) / dt, -9, 9);
+        var base = Math.round(pos);
+        target = cl(cl(Math.round(pos + v * .2), base - 2, base + 2), 0, m); vel = v;
+      } else target = cl(Math.round(pos), 0, m);
+      kick();
+    }
+    el.addEventListener('pointerup', release); el.addEventListener('pointercancel', release);
+    el.addEventListener('click', function (e) { if (block) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
     return c;
   }
 
