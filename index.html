@@ -199,6 +199,59 @@
   .gal-name { margin-top: 12px; text-align: center; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; opacity: .55; overflow-wrap: anywhere; }
   .gal-empty { grid-column: 1 / -1; text-align: center; opacity: .5; padding-top: 12vh; font-size: 14px; }
 </style>
+
+<style>
+/* ---- Envanter: sahnenin altında, hikaye kartının ~%36'sı boyutunda kare kartlar ---- */
+:root{ --cw: min(78vw, 340px, calc(var(--full-h, 844px) * .36)); --iw: calc(var(--cw) * .36); --drop: calc(var(--full-h, 844px) * .06); }
+.inv{
+  position:absolute; top:0; left:0; z-index:4; width:100%; height:var(--full-h,100%);
+  display:flex; align-items:flex-end; pointer-events:none;
+  opacity:0; transition:opacity .4s ease;
+}
+body.playing .inv{ opacity:1; }
+body.playing .inv.away{ opacity:0; }
+.inv-in{ width:100%; padding:0 0 calc(env(safe-area-inset-bottom,0px) + 14px); }
+.shelf{
+  display:flex; gap:12px; overflow-x:auto; overflow-y:hidden; overscroll-behavior:contain; touch-action:pan-x;
+  padding:56px 22px 6px; scrollbar-width:none; pointer-events:none;
+}
+.shelf::-webkit-scrollbar{ display:none; }
+.shelf > :first-child{ margin-left:auto; } .shelf > :last-child{ margin-right:auto; }
+body.playing .shelf{ pointer-events:auto; }
+.ic{
+  flex:none; width:var(--iw); aspect-ratio:1; padding:0; border:0; background:none; cursor:pointer; position:relative;
+  transform:rotate(var(--r,0deg)); transform-origin:50% 100%;
+  transition:transform .45s cubic-bezier(.2,1.3,.4,1), filter .35s ease;
+  -webkit-appearance:none; appearance:none;
+}
+.ic:nth-child(odd){ --r:-2.5deg; } .ic:nth-child(even){ --r:2deg; }
+.ic .face{
+  position:absolute; inset:0; border-radius:calc(var(--iw) * .15); overflow:hidden; background:#1b2127;
+  box-shadow:0 8px 18px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.07); transition:box-shadow .4s ease;
+}
+.ic .face svg{ display:block; width:100%; height:100%; pointer-events:none; }
+.ic::before{ content:""; position:absolute; left:14%; right:14%; bottom:-10px; height:12px; border-radius:50%;
+  background:rgba(0,0,0,.75); filter:blur(7px); opacity:0; transition:opacity .35s; z-index:-1; }
+.ic:active:not(.on){ transform:rotate(var(--r,0deg)) translateY(-8px) scale(1.04); }
+.shelf.pick .ic:not(.on){ filter:brightness(.5) saturate(.7); transform:rotate(var(--r,0deg)) scale(.96); }
+.ic.on{ transform:rotate(0deg) translateY(-28px) scale(1.12); z-index:2; }
+.ic.on .face{ box-shadow:0 20px 28px rgba(0,0,0,.8), 0 0 0 1.5px rgba(239,233,220,.9), 0 0 24px rgba(239,233,220,.22); }
+.ic.on::before{ opacity:1; bottom:-34px; }
+.ic:focus-visible{ outline:2px solid #efe9dc; outline-offset:4px; }
+.inv-cap{
+  display:flex; align-items:center; justify-content:center; gap:14px; height:22px; margin-top:8px;
+  font:italic 14px/1 Georgia,'Times New Roman',serif; letter-spacing:.08em; color:#efe9dc; opacity:.4;
+  transition:opacity .3s ease;
+}
+.inv-cap::before,.inv-cap::after{ content:""; width:34px; height:1px; background:currentColor; opacity:.5; }
+.inv-cap.has{ opacity:.9; }
+.inv-cap span{ transition:opacity .18s ease; }
+@keyframes deal{ from{ opacity:0; transform:translateY(70px) rotate(0deg) scale(.9); } }
+body.playing .ic{ animation:deal .7s cubic-bezier(.2,1.1,.3,1) backwards; }
+body.playing .ic:nth-child(2){ animation-delay:.12s; } body.playing .ic:nth-child(3){ animation-delay:.24s; }
+body.playing .ic:nth-child(4){ animation-delay:.36s; }
+@media (prefers-reduced-motion:reduce){ .ic{ transition:none; animation:none !important; } }
+</style>
 </head>
 <body>
 <div class="stage" id="stage">
@@ -249,6 +302,12 @@
   <div class="end" id="end"><p id="endT"></p><small>Dokun ve yeniden başla</small></div>
 </div>
 
+
+<div class="inv" id="inv"><div class="inv-in">
+  <div class="shelf" id="shelf"></div>
+  <div class="inv-cap" id="invCap"><span>envanter</span></div>
+</div></div>
+
 <button class="exit" id="exitBtn" type="button">Menü</button>
 
 <div class="menu" id="menu">
@@ -283,218 +342,35 @@
  *   once:     true ise bir kez çıkar
  * }
  */
-/* CARDS:BEGIN */
 window.CARDS = [
-  {
-    "id": "k1",
-    "speaker": "???",
-    "text": "Hey, Burada mısın? ",
-    "arc": "ana",
-    "left": {
-      "label": "Sanırım",
-      "effects": {
-        "faith": 5
-      },
-      "next": [
-        "k2"
-      ]
-    },
-    "right": {
-      "label": "Sende kimsin",
-      "effects": {},
-      "next": [
-        "k3"
-      ]
-    },
-    "art": "hat"
-  },
-  {
-    "id": "k2",
-    "speaker": "???",
-    "text": "Güzel, dün gece neredeydin?",
-    "arc": "ana",
-    "left": {
-      "label": "Evde",
-      "effects": {},
-      "next": [
-        "k4"
-      ]
-    },
-    "right": {
-      "label": "Hatırlamıyorum",
-      "effects": {},
-      "next": [
-        "k5"
-      ]
-    },
-    "art": "hat"
-  },
-  {
-    "id": "k3",
-    "speaker": "???",
-    "text": "Gerçekleri bilmek isteyen biri",
-    "arc": "ana",
-    "left": {
-      "label": "Gerçekler nedir?",
-      "effects": {},
-      "next": [
-        "k6"
-      ]
-    },
-    "right": {
-      "label": "Birazdan buradan çıkacağım",
-      "effects": {},
-      "next": [
-        "k7"
-      ]
-    },
-    "art": "hat"
-  },
-  {
-    "id": "k4",
-    "speaker": "???",
-    "text": "YALAN, Şu fotoğraflara iyi bak bu sen değil misin?",
-    "arc": "ana",
-    "left": {
-      "label": "Benim",
-      "effects": {},
-      "next": [
-        "k10"
-      ]
-    },
-    "right": {
-      "label": "Ama nasıl?",
-      "effects": {},
-      "next": [
-        "k10"
-      ]
-    },
-    "art": "hat"
-  },
-  {
-    "id": "k5",
-    "speaker": "???",
-    "text": "Yormaya başladın, anlatta işimize bakalım",
-    "arc": "ana",
-    "left": {
-      "label": "Sana anlatacak bir şeyim yok",
-      "effects": {},
-      "next": [
-        "k10"
-      ]
-    },
-    "right": {
-      "label": "(Sessiz kal)",
-      "effects": {},
-      "next": [
-        "k10"
-      ]
-    },
-    "art": "hat"
-  },
-  {
-    "id": "k6",
-    "speaker": "???",
-    "text": "Hatırlamıyorumuş gibi davranmana gerek yok, kandırabileceğin biri değilim, şimdi gerçekler",
-    "arc": "ana",
-    "left": {
-      "label": "(Avukatını çağır)",
-      "effects": {},
-      "next": [
-        "k8"
-      ]
-    },
-    "right": {
-      "label": "Dosyanın içinde ne var?",
-      "effects": {},
-      "next": [
-        "k8"
-      ]
-    },
-    "art": "hat"
-  },
-  {
-    "id": "k7",
-    "speaker": "???",
-    "text": "Cevaplarımı aldıktan sonra çıkabilirsin.",
-    "arc": "ana",
-    "left": {
-      "label": "Kendini avutmaya devam et",
-      "effects": {},
-      "next": [
-        "k8"
-      ]
-    },
-    "right": {
-      "label": "(Avukatı çağır)",
-      "effects": {},
-      "next": [
-        "k8"
-      ]
-    },
-    "art": "hat"
-  },
-  {
-    "id": "k8",
-    "speaker": "Avukat Russel",
-    "text": "Sohbetinizi bölüyorum, ama müvekkilimin gitme vakti geldi, iyi günler dilerim",
-    "arc": "ana",
-    "left": {
-      "label": "(Arkana bakmadan Kapıdan çık) ",
-      "effects": {},
-      "next": [
-        "k9"
-      ]
-    },
-    "right": {
-      "label": "Tekrar görüşür müyüz?",
-      "effects": {},
-      "next": [
-        "k9"
-      ]
-    },
-    "art": "friend"
-  },
-  {
-    "id": "k9",
-    "speaker": "???",
-    "text": "Özletmeyeceğim kendimi",
-    "arc": "ana",
-    "left": {
-      "label": "",
-      "effects": {},
-      "next": []
-    },
-    "right": {
-      "label": "",
-      "effects": {},
-      "next": []
-    },
-    "art": "hat"
-  },
-  {
-    "id": "k10",
-    "speaker": "Avukat Russel",
-    "text": "Gitmemiz gerekiyor. ",
-    "arc": "ana",
-    "left": {
-      "label": "",
-      "effects": {},
-      "next": [
-        "k8"
-      ]
-    },
-    "right": {
-      "label": "",
-      "effects": {},
-      "next": [
-        "k8"
-      ]
-    },
-    "art": "friend"
-  }
+  { id:'q1', speaker:'Uğultu', clarity:0.04, text:'…uyan… Beni du…yu…yor musun? Gözlerini aç.',
+    left:  { label:'Sus', effects:{}, next: ['q2'] },
+    right: { label:'Evet', effects:{}, next: ['q2'] } },
+  { id:'q2', speaker:'Boğuk bir ses', clarity:0.15, text:'Dur. Adını söyle bana.',
+    left:  { label:'Hatırlamıyorum', effects:{}, next: ['q3'] },
+    right: { label:'Söylemem', effects:{}, next: ['q3'] } },
+  { id:'q3', speaker:'Boğuk bir ses', clarity:0.3, text:'Dün gece… neredeydin? Düşün.',
+    left:  { label:'Hayır', effects:{}, next: ['q4'] },
+    right: { label:'Hatırlıyorum', effects:{}, next: ['q4'], set:['hatirliyor'] } },
+  { id:'q4', speaker:'Bir erkek sesi', clarity:0.5, text:'Yanındaki adam kimdi? Bana onu anlat.',
+    left:  { label:'Tanımıyorum', effects:{}, next: ['q5'] },
+    right: { label:'Anlatırım', effects:{}, next: ['q5'] } },
+  { id:'q5', speaker:'Bir gölge', clarity:0.7, text:'Bir şey saklıyorsun. Gözlerinden belli.',
+    left:  { label:'Saklamıyorum', effects:{}, next: ['q6'] },
+    right: { label:'Saklıyorum', effects:{}, next: ['q6'] } },
+  { id:'q6', speaker:'???', clarity:0.88, text:'Bana bak. Şimdi söyle: beni tanıdın mı?',
+    left:  { label:'Hayır', effects:{}, next: ['q7'] },
+    right: { label:'Belki', effects:{}, next: ['q7'] } },
+  { id:'q7', speaker:'???', clarity:1, text:'Işık kısılıyor. Yarın devam ederiz.',
+    left:  { label:'…', effects:{}, set:['sorguBitti'], next:['f1'] },
+    right: { label:'…', effects:{}, set:['sorguBitti'], next:['f1'] } },
+
+  /* Arkadaş: sorgudan sonra, dışarıda, gün ışığında. art:'friend' kartın görselini değiştirir. */
+  { id:'f1', art:'friend', speaker:'Arkadaşın', text:'Çıkabildin demek. Yüzün bembeyaz. Ne sordular sana?', once:true,
+    requires:{ flags:['sorguBitti'] },
+    left:  { label:'Anlatmam', effects:{} },
+    right: { label:'Anlatırım', effects:{} } }
 ];
-/* CARDS:END */
 
 /* Oyun sonları: bir istatistik 0'a ya da 100'e değince tetiklenir. */
 window.ENDINGS = {
@@ -697,7 +573,7 @@ window.ENDINGS = {
     document.documentElement.style.setProperty('--full-h', h + 'px');
   }
   document.addEventListener('touchmove', function (e) {
-    if (e.target.closest && e.target.closest('.gal-list')) return;   // Kartlar sayfası kaydırılabilsin
+    if (e.target.closest && e.target.closest('.gal-list, .shelf')) return;   // Kartlar sayfası kaydırılabilsin
     e.preventDefault();
   }, { passive: false });
   window.addEventListener('scroll', function () { window.scrollTo(0, 0); });
@@ -1040,6 +916,72 @@ window.Scene = {
   document.getElementById('cardsBtn').addEventListener('click', function (e) { e.stopPropagation(); open(); });
   document.getElementById('galBack').addEventListener('click', function (e) { e.stopPropagation(); close(); });
   gal.addEventListener('click', function (e) { e.stopPropagation(); });
+})();
+</script>
+
+<script>
+/* Envanter: karakter kartları. Çizimler ART'tan, adlar ART_NAMES'ten gelir.
+ *  Inventory.add('id')   → envantere kart ekler (ART'ta o adla çizim olmalı)
+ *  Inventory.held        → seçili kartın id'si ya da null
+ *  stage üzerinde 'hold' olayı: { id } (seçim) / { id:null } (bırakma) */
+(function () {
+  var stage = document.getElementById('stage'), inv = document.getElementById('inv');
+  var shelf = document.getElementById('shelf'), cap = document.getElementById('invCap');
+  var capSpan = cap.firstChild;
+  function nm(id) { return (window.ART_NAMES && ART_NAMES[id]) || id; }
+  function svgFor(id) {                       // aynı çizim sayfada iki kez olacağı için id çakışmasın
+    var s = (window.ART && ART[id]) || '';
+    return s.replace(/id="([^"]+)"/g, 'id="inv_$1"').replace(/url\(#([^)]+)\)/g, 'url(#inv_$1)');
+  }
+  function say(t, on) {
+    capSpan.style.opacity = 0;
+    setTimeout(function () { capSpan.textContent = t; capSpan.style.opacity = 1; cap.classList.toggle('has', !!on); }, 160);
+  }
+  var Inventory = window.Inventory = {
+    items: ['hat', 'friend'], held: null,
+    build: function () {
+      shelf.innerHTML = '';
+      this.items.forEach(function (id) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'ic'; b.setAttribute('data-id', id);
+        b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', nm(id));
+        b.innerHTML = '<div class="face">' + svgFor(id) + '</div>';
+        shelf.appendChild(b);
+      });
+    },
+    add: function (id) {
+      if (this.items.indexOf(id) < 0) { this.items.push(id); this.build(); this.select(this.held); }
+    },
+    select: function (id) {
+      this.held = id || null;
+      [].forEach.call(shelf.children, function (c) {
+        var on = c.getAttribute('data-id') === id;
+        c.classList.toggle('on', on); c.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      shelf.classList.toggle('pick', !!id);
+      say(id ? nm(id) : 'envanter', !!id);
+      stage.dispatchEvent(new CustomEvent('hold', { detail: { id: this.held } }));
+    }
+  };
+  shelf.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var c = e.target.closest('.ic');
+    if (!c) { if (Inventory.held) Inventory.select(null); return; }   // raf aralığı / boşluk: bırak
+    var id = c.getAttribute('data-id');
+    Inventory.select(Inventory.held === id ? null : id);
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
+  });
+  ['pointerdown', 'pointerup'].forEach(function (n) { inv.addEventListener(n, function (e) { e.stopPropagation(); }); });
+  Inventory.build();
+  document.body.addEventListener('click', function () {                // boş alana dokunulunca bırak
+    if (Inventory.held && document.body.classList.contains('playing')) Inventory.select(null);
+  });
+
+  stage.addEventListener('end', function () { inv.classList.add('away'); });
+  stage.addEventListener('card', function () { inv.classList.remove('away'); });
+  new MutationObserver(function () {          // menüye çıkılınca seçim sıfırlanır
+    if (!document.body.classList.contains('playing')) { Inventory.select(null); inv.classList.remove('away'); }
+  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 })();
 </script>
 </body>
