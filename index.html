@@ -203,9 +203,11 @@
 <style>
 /* ---- Envanter: çanta ikonuyla açılan panel · iki sayfa: eşyalar / etkiler ---- */
 :root{ --cw: min(78vw, 340px, calc(var(--full-h, 844px) * .36)); --iw: calc(var(--cw) * .36); --drop: calc(var(--full-h, 844px) * .06); --ease: cubic-bezier(.22,.85,.3,1); }
-.inv{ position:absolute; top:0; left:0; z-index:4; width:100%; height:var(--full-h,100%); display:flex; align-items:flex-end; pointer-events:none; }
+.inv{ position:absolute; top:0; left:0; z-index:4; width:100%; height:var(--full-h,100%); display:flex; flex-direction:column; justify-content:flex-end; pointer-events:none;
+  opacity:0; transition:opacity .4s ease; }
+body.playing .inv:not(.away){ opacity:1; }
 .inv-in{
-  width:100%; padding:0 0 calc(env(safe-area-inset-bottom,0px) + 14px);
+  width:100%;
   opacity:0; transform:translate3d(0,26px,0); visibility:hidden;
   transition:opacity .35s ease, transform .5s var(--ease), visibility 0s linear .5s;
 }
@@ -248,7 +250,7 @@ body.playing .inv:not(.away).open .inv-in{ opacity:1; transform:none; visibility
 .ic:focus-visible{ outline:2px solid #efe9dc; outline-offset:4px; }
 
 /* Alt yazı: çapraz geçiş + akıcı genişlik */
-.inv-cap{ display:flex; align-items:center; justify-content:center; gap:14px; height:22px; margin-top:8px;
+.inv-cap{ display:flex; align-items:center; justify-content:center; gap:14px; height:34px; box-sizing:border-box; padding:6px 20px; width:max-content; margin:2px auto calc(env(safe-area-inset-bottom,0px) + 10px); -webkit-tap-highlight-color:transparent;
   font:italic 14px/1 Georgia,'Times New Roman',serif; letter-spacing:.08em; color:#efe9dc; opacity:.4; transition:opacity .4s ease, color .4s ease; }
 .inv-cap::before,.inv-cap::after{ content:""; width:34px; height:1px; background:currentColor; opacity:.5; }
 .inv-cap.has{ opacity:.9; } .inv-cap.fxcap{ color:#e8998a; }
@@ -258,6 +260,9 @@ body.playing .inv:not(.away).open .inv-in{ opacity:1; transform:none; visibility
 .cap-slot span.out{ opacity:0; transform:translate3d(-50%,-7px,0); }
 
 /* Sekmeler: eşyalar | etkiler, altında kayan çizgi */
+.inv.open .tabs{ pointer-events:auto; }
+body.playing .inv:not(.away) .inv-cap{ pointer-events:auto; cursor:pointer; }
+.inv-cap.dot .cap-slot::after{ content:""; position:absolute; top:3px; right:-9px; width:5px; height:5px; border-radius:50%; background:#e8836a; }
 .tabs{ position:relative; display:flex; justify-content:center; gap:30px; margin:12px auto 0; width:max-content; }
 .tabs button{ position:relative; appearance:none; -webkit-appearance:none; background:none; border:0; padding:6px 2px 8px; cursor:pointer; color:#efe9dc; opacity:.38;
   font:10.5px/1 Georgia,'Times New Roman',serif; letter-spacing:.3em; text-transform:uppercase; transition:opacity .35s ease; -webkit-tap-highlight-color:transparent; }
@@ -265,18 +270,6 @@ body.playing .inv:not(.away).open .inv-in{ opacity:1; transform:none; visibility
 .tabs sup{ font-size:9px; letter-spacing:0; margin-left:5px; opacity:.6; vertical-align:top; }
 .tabs button.dot::after{ content:""; position:absolute; top:2px; right:-7px; width:5px; height:5px; border-radius:50%; background:#e8836a; }
 .tab-ink{ position:absolute; left:0; bottom:0; height:1px; width:0; background:#efe9dc; opacity:.7; transition:transform .5s var(--ease), width .5s var(--ease); }
-
-/* Çanta düğmesi (sol alt) */
-.bag{ position:absolute; z-index:6; left:14px; bottom:calc(env(safe-area-inset-bottom,0px) + 12px); width:44px; height:44px; padding:0;
-  display:flex; align-items:center; justify-content:center; border-radius:50%; cursor:pointer; color:#efe9dc;
-  background:rgba(239,233,220,.04); border:1px solid rgba(239,233,220,.2); -webkit-appearance:none; appearance:none; -webkit-tap-highlight-color:transparent;
-  opacity:0; pointer-events:none; transform:scale(.8);
-  transition:opacity .4s ease, transform .45s var(--ease), background .3s ease, border-color .3s ease; }
-body.playing .bag:not(.away){ opacity:.72; pointer-events:auto; transform:none; }
-body.playing .bag.on:not(.away){ opacity:1; background:rgba(239,233,220,.1); border-color:rgba(239,233,220,.55); }
-body.playing .bag:not(.away):active{ transform:scale(.92); transition-duration:.15s; }
-.bag svg{ width:22px; height:22px; display:block; }
-.bag.dot::after{ content:""; position:absolute; top:7px; right:8px; width:7px; height:7px; border-radius:50%; background:#e8836a; box-shadow:0 0 0 2px #000; }
 
 @keyframes deal{ from{ opacity:0; transform:translateY(60px) scale(.9); } }
 .inv.open .ic{ animation:deal .7s var(--ease) backwards; }
@@ -334,19 +327,20 @@ body.playing .bag:not(.away):active{ transform:scale(.92); transition-duration:.
 </div>
 
 
-<div class="inv" id="inv"><div class="inv-in">
-  <div class="panes">
-    <div class="shelf" id="shelf" data-empty="henüz eşya yok"></div>
-    <div class="shelf fxp off" id="fxShelf" data-empty="üzerinde etki yok"></div>
+<div class="inv" id="inv">
+  <div class="inv-in">
+    <div class="panes">
+      <div class="shelf" id="shelf" data-empty="henüz eşya yok"></div>
+      <div class="shelf fxp off" id="fxShelf" data-empty="üzerinde etki yok"></div>
+    </div>
+    <div class="tabs" id="tabs">
+      <button type="button" class="on" data-t="items">eşyalar<sup id="nI"></sup></button>
+      <button type="button" data-t="fx">etkiler<sup id="nF"></sup></button>
+      <i class="tab-ink" id="ink"></i>
+    </div>
   </div>
   <div class="inv-cap" id="invCap"><div class="cap-slot" id="capSlot"><span class="in">envanter</span><span></span></div></div>
-  <div class="tabs" id="tabs">
-    <button type="button" class="on" data-t="items">eşyalar<sup id="nI"></sup></button>
-    <button type="button" data-t="fx">etkiler<sup id="nF"></sup></button>
-    <i class="tab-ink" id="ink"></i>
-  </div>
-</div></div>
-<button class="bag" id="bag" type="button" aria-label="Envanter" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9.5h10l1.2 10.5H5.8L7 9.5Z"/><path d="M9.2 9.5V8a2.8 2.8 0 0 1 5.6 0v1.5"/></svg></button>
+</div>
 
 <button class="exit" id="exitBtn" type="button">Menü</button>
 
@@ -966,7 +960,7 @@ window.Scene = {
  *  Inventory.addEffect('id') / removeEffect('id')  ·  hikâyede bayrak: opt.set:['kelepce'] / unset:['kelepce']
  *  Inventory.toggle() / open() / close()  ·  Çizimler ART[id], adlar ART_NAMES[id] */
 (function () {
-  var stage = document.getElementById('stage'), inv = document.getElementById('inv'), bag = document.getElementById('bag');
+  var stage = document.getElementById('stage'), inv = document.getElementById('inv');
   var cap = document.getElementById('invCap'), slot = document.getElementById('capSlot');
   var tabs = document.getElementById('tabs'), ink = document.getElementById('ink');
   var GAP = 12, SIDE = 22;
@@ -1073,7 +1067,7 @@ window.Scene = {
   var unseen = { items: false, fx: false }, tab = 'items', isOpen = false;
 
   /* ---- Sekmeler, yazı, noktalar ---- */
-  function idle() { return tab === 'items' ? 'envanter' : (fxC.ids.length ? 'etkiler' : 'etki yok'); }
+  function idle() { if (!isOpen) return 'envanter'; return tab === 'items' ? 'envanter' : (fxC.ids.length ? 'etkiler' : 'etki yok'); }
   function caption() {
     if (Inventory.held) say(nm(Inventory.held), true, false);
     else if (Inventory.seen) say(nm(Inventory.seen) + ' etkisi', true, true);
@@ -1090,7 +1084,7 @@ window.Scene = {
   }
   function dots() {
     [].forEach.call(tabs.querySelectorAll('button'), function (b) { b.classList.toggle('dot', !!unseen[b.getAttribute('data-t')]); });
-    bag.classList.toggle('dot', !isOpen && (unseen.items || unseen.fx));
+    cap.classList.toggle('dot', !isOpen && (unseen.items || unseen.fx));
   }
   function note(kind) { if (!isOpen || tab !== kind) { unseen[kind] = true; dots(); } }
 
@@ -1126,19 +1120,25 @@ window.Scene = {
       placeInk(); dots(); caption();
     },
     open: function () {
-      isOpen = true; inv.classList.add('open'); bag.classList.add('on'); bag.setAttribute('aria-expanded', 'true');
-      unseen[tab] = false; dots(); itemsC.layout(); itemsC.update(); fxC.layout(); fxC.update(); placeInk(); fitSlot();
+      isOpen = true; inv.classList.add('open');
+      unseen[tab] = false; dots(); caption(); itemsC.layout(); itemsC.update(); fxC.layout(); fxC.update(); placeInk(); fitSlot();
     },
     close: function () {
-      isOpen = false; inv.classList.remove('open'); bag.classList.remove('on'); bag.setAttribute('aria-expanded', 'false');
-      if (this.held) this.select(null); if (this.seen) this.inspect(null);
+      isOpen = false; inv.classList.remove('open');
+      if (this.held) this.select(null, true); if (this.seen) this.inspect(null);
+      dots(); caption();
     },
     toggle: function () { if (isOpen) this.close(); else this.open(); }
   };
   Inventory.selectEffect = function (id) { Inventory.inspect(id); };
 
-  bag.addEventListener('click', function (e) { e.stopPropagation(); Inventory.toggle(); if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} } });
-  ['pointerdown', 'pointerup'].forEach(function (n) { bag.addEventListener(n, function (e) { e.stopPropagation(); }); inv.addEventListener(n, function (e) { e.stopPropagation(); }); });
+  ['pointerdown', 'pointerup'].forEach(function (n) { inv.addEventListener(n, function (e) { e.stopPropagation(); }); });
+  cap.addEventListener('click', function (e) {          // alt yazı: kapalıyken açar; açıkken ve kart seçili değilken kapatır
+    e.stopPropagation();
+    if (!isOpen) Inventory.open();
+    else if (!Inventory.held && !Inventory.seen) Inventory.close();
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
+  });
   tabs.addEventListener('click', function (e) { e.stopPropagation(); var b = e.target.closest('button'); if (b) Inventory.setTab(b.getAttribute('data-t')); });
 
   itemsC.el.addEventListener('click', function (e) {
@@ -1164,8 +1164,8 @@ window.Scene = {
     var f = (window.Game && Game.state && Game.state.flags) || {};
     Inventory.effectFlags.forEach(function (id) { if (f[id]) Inventory.addEffect(id); else Inventory.removeEffect(id); });
   }
-  stage.addEventListener('card', function () { inv.classList.remove('away'); bag.classList.remove('away'); syncFx(); });
-  stage.addEventListener('end', function () { inv.classList.add('away'); bag.classList.add('away'); syncFx(); });
+  stage.addEventListener('card', function () { inv.classList.remove('away'); syncFx(); });
+  stage.addEventListener('end', function () { inv.classList.add('away'); syncFx(); });
   document.body.addEventListener('click', function () {                // boş alana dokunulunca seçim bırakılır
     if (!document.body.classList.contains('playing')) return;
     if (Inventory.held) Inventory.select(null); else if (Inventory.seen) Inventory.inspect(null);
@@ -1181,7 +1181,7 @@ window.Scene = {
     var pl = document.body.classList.contains('playing');
     if (pl === wasPlaying) return; wasPlaying = pl;
     if (pl) { demoEffects.forEach(function (id, i) { setTimeout(function () { Inventory.addEffect(id); }, 600 + i * 200); }); return; }
-    Inventory.close(); inv.classList.remove('away'); bag.classList.remove('away');   // menüye çıkış: her şey sıfırlanır
+    Inventory.close(); inv.classList.remove('away');   // menüye çıkış: her şey sıfırlanır
     if (Inventory.seen) Inventory.inspect(null);
     fxC.ids.length = 0; fxC.build(); unseen.items = unseen.fx = false; Inventory.setTab('items'); counts(); dots();
   }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
