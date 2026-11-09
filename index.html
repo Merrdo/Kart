@@ -201,100 +201,87 @@
 </style>
 
 <style>
-/* ---- Envanter: kaydırmalı, ortaya oturan kart rafı (3+ eşya için) ---- */
+/* ---- Envanter: çanta ikonuyla açılan panel · iki sayfa: eşyalar / etkiler ---- */
 :root{ --cw: min(78vw, 340px, calc(var(--full-h, 844px) * .36)); --iw: calc(var(--cw) * .36); --drop: calc(var(--full-h, 844px) * .06); --ease: cubic-bezier(.22,.85,.3,1); }
-.inv{
-  position:absolute; top:0; left:0; z-index:4; width:100%; height:var(--full-h,100%);
-  display:flex; align-items:flex-end; pointer-events:none;
-  opacity:0; transition:opacity .4s ease;
+.inv{ position:absolute; top:0; left:0; z-index:4; width:100%; height:var(--full-h,100%); display:flex; align-items:flex-end; pointer-events:none; }
+.inv-in{
+  width:100%; padding:0 0 calc(env(safe-area-inset-bottom,0px) + 14px);
+  opacity:0; transform:translate3d(0,26px,0); visibility:hidden;
+  transition:opacity .35s ease, transform .5s var(--ease), visibility 0s linear .5s;
 }
-body.playing .inv{ opacity:1; }
-body.playing .inv.away{ opacity:0; }
-.inv-in{ width:100%; padding:0 0 calc(env(safe-area-inset-bottom,0px) + 14px); }
+body.playing .inv:not(.away).open .inv-in{ opacity:1; transform:none; visibility:visible; transition:opacity .4s ease, transform .55s var(--ease); }
+
+.panes{ display:grid; }
 .shelf{
-  position:relative; display:flex; gap:12px; overflow-x:auto; overflow-y:hidden; overscroll-behavior:contain; touch-action:pan-x;
-  padding:56px 22px 6px; scrollbar-width:none; pointer-events:none;
-  scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+  grid-area:1/1; position:relative; display:flex; gap:12px; overflow-x:auto; overflow-y:hidden; overscroll-behavior:contain; touch-action:pan-x;
+  padding:56px 22px 6px; scrollbar-width:none; pointer-events:none; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+  transition:opacity .4s ease, transform .5s var(--ease); will-change:transform,opacity;
 }
 .shelf::-webkit-scrollbar{ display:none; }
 .shelf.many{ -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent); mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent); }
-body.playing .shelf{ pointer-events:auto; }
+.inv.open .shelf:not(.off){ pointer-events:auto; }
+.shelf.off{ opacity:0; }
+#shelf.off{ transform:translate3d(-30px,0,0); } #fxShelf.off{ transform:translate3d(30px,0,0); }
+.shelf.empty::before{ content:attr(data-empty); position:absolute; left:0; right:0; top:calc(56px + var(--iw) / 2 - 9px); text-align:center;
+  font:italic 14px/1.3 Georgia,'Times New Roman',serif; letter-spacing:.08em; color:#efe9dc; opacity:.35; }
+.shelf.fxp{ --ring:#e8836a; --glow:rgba(232,131,106,.32); }
 
-/* Katman 1 .ic: yerleşim + snap | 2 .lift: kaydırmaya bağlı yelpaze (JS) | 3 .sel: seçim hareketi | 4 .face: çizim */
-.ic{
-  flex:none; width:var(--iw); aspect-ratio:1; padding:0; border:0; background:none; cursor:pointer; position:relative;
-  scroll-snap-align:center; -webkit-appearance:none; appearance:none; -webkit-tap-highlight-color:transparent;
-}
+/* Katman 1 .ic: yerleşim + snap | 2 .lift: kaydırmaya bağlı yelpaze | 3 .sel: seçim hareketi | 4 .face: çizim */
+.ic{ flex:none; width:var(--iw); aspect-ratio:1; padding:0; border:0; background:none; cursor:pointer; position:relative;
+  scroll-snap-align:center; -webkit-appearance:none; appearance:none; -webkit-tap-highlight-color:transparent; }
 .lift{ position:absolute; inset:0; transform-origin:50% 100%; will-change:transform,opacity; }
 .shelf.ease .lift{ transition:transform .5s var(--ease), opacity .5s ease; }
-.sel{ position:absolute; inset:0; transform-origin:50% 100%; will-change:transform; transition:transform .55s var(--ease); }
+.sel{ position:absolute; inset:0; transform-origin:50% 100%; will-change:transform; transition:transform .55s var(--ease), opacity .35s ease; }
 .ic:active:not(.on) .sel{ transform:translateY(-6px) scale(1.03); transition-duration:.18s; }
 .shelf.pick .ic:not(.on) .sel{ transform:scale(.95); }
 .ic.on .sel{ transform:translateY(-28px) scale(1.12); }
-.ic .face{
-  position:absolute; inset:0; border-radius:calc(var(--iw) * .15); overflow:hidden; background:#1b2127;
-  box-shadow:0 8px 18px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.07);
-}
+.ic.gone .sel{ opacity:0; transform:scale(.6); }
+.ic .face{ position:absolute; inset:0; border-radius:calc(var(--iw) * .15); overflow:hidden; background:#1b2127;
+  box-shadow:0 8px 18px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.07); }
+.fxp .ic .face{ background:#2b1618; box-shadow:0 8px 18px rgba(0,0,0,.65), inset 0 0 0 1.5px rgba(222,120,98,.55); }
 .ic .face svg{ display:block; width:100%; height:100%; pointer-events:none; }
-.ic .face::after{ content:""; position:absolute; inset:0; background:#000; opacity:0; transition:opacity .4s ease; }   /* filter yerine yalnızca opacity: GPU'da akıcı */
+.ic .face::after{ content:""; position:absolute; inset:0; background:#000; opacity:0; transition:opacity .4s ease; }
 .shelf.pick .ic:not(.on) .face::after{ opacity:.5; }
 .ic .halo{ position:absolute; inset:0; border-radius:calc(var(--iw) * .15); pointer-events:none; opacity:0; transition:opacity .45s ease;
-  box-shadow:0 20px 28px rgba(0,0,0,.8), 0 0 0 1.5px rgba(239,233,220,.9), 0 0 24px rgba(239,233,220,.22); }
+  box-shadow:0 20px 28px rgba(0,0,0,.8), 0 0 0 1.5px var(--ring,rgba(239,233,220,.9)), 0 0 24px var(--glow,rgba(239,233,220,.22)); }
 .ic.on .halo{ opacity:1; }
 .ic:focus-visible{ outline:2px solid #efe9dc; outline-offset:4px; }
 
-/* Alt yazı: iki katman çapraz geçiş, ortadaki alanın genişliği yumuşakça değişir (sıçrama yok) */
-.inv-cap{
-  display:flex; align-items:center; justify-content:center; gap:14px; height:22px; margin-top:8px;
-  font:italic 14px/1 Georgia,'Times New Roman',serif; letter-spacing:.08em; color:#efe9dc; opacity:.4;
-  transition:opacity .4s ease;
-}
+/* Alt yazı: çapraz geçiş + akıcı genişlik */
+.inv-cap{ display:flex; align-items:center; justify-content:center; gap:14px; height:22px; margin-top:8px;
+  font:italic 14px/1 Georgia,'Times New Roman',serif; letter-spacing:.08em; color:#efe9dc; opacity:.4; transition:opacity .4s ease, color .4s ease; }
 .inv-cap::before,.inv-cap::after{ content:""; width:34px; height:1px; background:currentColor; opacity:.5; }
-.inv-cap.has{ opacity:.9; }
+.inv-cap.has{ opacity:.9; } .inv-cap.fxcap{ color:#e8998a; }
 .cap-slot{ position:relative; height:22px; width:70px; transition:width .55s var(--ease); }
-.cap-slot span{
-  position:absolute; left:50%; top:0; line-height:22px; white-space:nowrap; opacity:0;
-  transform:translate3d(-50%,7px,0); transition:opacity .32s ease, transform .5s var(--ease);
-}
+.cap-slot span{ position:absolute; left:50%; top:0; line-height:22px; white-space:nowrap; opacity:0; transform:translate3d(-50%,7px,0); transition:opacity .32s ease, transform .5s var(--ease); }
 .cap-slot span.in{ opacity:1; transform:translate3d(-50%,0,0); }
 .cap-slot span.out{ opacity:0; transform:translate3d(-50%,-7px,0); }
 
-@keyframes deal{ from{ opacity:0; transform:translateY(70px) scale(.9); } }
-body.playing .ic{ animation:deal .7s var(--ease) backwards; }
-body.playing .ic:nth-child(2){ animation-delay:.12s; } body.playing .ic:nth-child(3){ animation-delay:.24s; }
-body.playing .ic:nth-child(4){ animation-delay:.36s; }
-@media (prefers-reduced-motion:reduce){ .sel,.lift,.cap-slot,.cap-slot span{ transition:none !important; } .ic{ animation:none !important; } }
-/* ---- Etki kartları: eşyalardan ayrı, küçük, kırmızımsı çerçeveli şerit ---- */
-.inv-cap{ transition:opacity .4s ease, color .4s ease; }
-.inv-cap.fxcap{ color:#e8998a; }
-.shelf{ transition:padding-top .5s var(--ease); }
-.inv.hasfx .shelf{ padding-top:48px; }
-.fx{
-  position:relative; display:flex; gap:10px; padding:0 22px; overflow-x:auto; overflow-y:hidden; touch-action:pan-x; scrollbar-width:none;
-  max-height:0; opacity:0; pointer-events:none;
-  transition:max-height .55s var(--ease), opacity .45s ease, padding-top .55s var(--ease);
-}
-.fx::-webkit-scrollbar{ display:none; }
-.fx > :first-child{ margin-left:auto; } .fx > :last-child{ margin-right:auto; }
-.fx.has{ max-height:76px; opacity:1; padding-top:12px; }
-body.playing .fx.has{ pointer-events:auto; }
-.fx.has::before{ content:""; position:absolute; top:3px; left:24%; right:24%; height:1px; background:linear-gradient(90deg,transparent,rgba(232,153,138,.35),transparent); }
-.fc{
-  flex:none; width:calc(var(--iw) * .5); aspect-ratio:1; position:relative; padding:0; border:0; background:none; cursor:pointer;
-  -webkit-appearance:none; appearance:none; -webkit-tap-highlight-color:transparent;
-  animation:fxin .6s var(--ease) backwards; transition:opacity .35s ease, transform .35s var(--ease);
-}
-.fc.gone{ opacity:0; transform:scale(.6); pointer-events:none; }
-.fc .face{ position:absolute; inset:0; border-radius:12px; overflow:hidden; background:#2b1618;
-  box-shadow:0 6px 12px rgba(0,0,0,.6), inset 0 0 0 1.5px rgba(222,120,98,.7); }
-.fc .face svg{ display:block; width:100%; height:100%; pointer-events:none; }
-.fc .halo{ position:absolute; inset:0; border-radius:12px; pointer-events:none; opacity:0; transition:opacity .4s ease;
-  box-shadow:0 10px 16px rgba(0,0,0,.7), 0 0 0 1.5px #e8836a, 0 0 18px rgba(232,131,106,.38); }
-.fc.on .halo{ opacity:1; }
-.fc.on .sel{ transform:translateY(-6px) scale(1.1); }
-.fc:active:not(.on) .sel{ transform:scale(1.04); transition-duration:.18s; }
-@keyframes fxin{ from{ opacity:0; transform:scale(.55) translateY(12px); } }
-@media (prefers-reduced-motion:reduce){ .fx,.fc,.shelf{ transition:none !important; animation:none !important; } }
+/* Sekmeler: eşyalar | etkiler, altında kayan çizgi */
+.tabs{ position:relative; display:flex; justify-content:center; gap:30px; margin:12px auto 0; width:max-content; }
+.tabs button{ position:relative; appearance:none; -webkit-appearance:none; background:none; border:0; padding:6px 2px 8px; cursor:pointer; color:#efe9dc; opacity:.38;
+  font:10.5px/1 Georgia,'Times New Roman',serif; letter-spacing:.3em; text-transform:uppercase; transition:opacity .35s ease; -webkit-tap-highlight-color:transparent; }
+.tabs button.on{ opacity:.9; }
+.tabs sup{ font-size:9px; letter-spacing:0; margin-left:5px; opacity:.6; vertical-align:top; }
+.tabs button.dot::after{ content:""; position:absolute; top:2px; right:-7px; width:5px; height:5px; border-radius:50%; background:#e8836a; }
+.tab-ink{ position:absolute; left:0; bottom:0; height:1px; width:0; background:#efe9dc; opacity:.7; transition:transform .5s var(--ease), width .5s var(--ease); }
+
+/* Çanta düğmesi (sol alt) */
+.bag{ position:absolute; z-index:6; left:14px; bottom:calc(env(safe-area-inset-bottom,0px) + 12px); width:44px; height:44px; padding:0;
+  display:flex; align-items:center; justify-content:center; border-radius:50%; cursor:pointer; color:#efe9dc;
+  background:rgba(239,233,220,.04); border:1px solid rgba(239,233,220,.2); -webkit-appearance:none; appearance:none; -webkit-tap-highlight-color:transparent;
+  opacity:0; pointer-events:none; transform:scale(.8);
+  transition:opacity .4s ease, transform .45s var(--ease), background .3s ease, border-color .3s ease; }
+body.playing .bag:not(.away){ opacity:.72; pointer-events:auto; transform:none; }
+body.playing .bag.on:not(.away){ opacity:1; background:rgba(239,233,220,.1); border-color:rgba(239,233,220,.55); }
+body.playing .bag:not(.away):active{ transform:scale(.92); transition-duration:.15s; }
+.bag svg{ width:22px; height:22px; display:block; }
+.bag.dot::after{ content:""; position:absolute; top:7px; right:8px; width:7px; height:7px; border-radius:50%; background:#e8836a; box-shadow:0 0 0 2px #000; }
+
+@keyframes deal{ from{ opacity:0; transform:translateY(60px) scale(.9); } }
+.inv.open .ic{ animation:deal .7s var(--ease) backwards; }
+.inv.open .ic:nth-child(2){ animation-delay:.08s; } .inv.open .ic:nth-child(3){ animation-delay:.16s; } .inv.open .ic:nth-child(4){ animation-delay:.24s; }
+@media (prefers-reduced-motion:reduce){ .sel,.lift,.shelf,.inv-in,.cap-slot,.cap-slot span,.tab-ink,.bag{ transition:none !important; } .ic{ animation:none !important; } }
 </style>
 </head>
 <body>
@@ -348,10 +335,18 @@ body.playing .fx.has{ pointer-events:auto; }
 
 
 <div class="inv" id="inv"><div class="inv-in">
-  <div class="shelf" id="shelf"></div>
-  <div class="fx" id="fx"></div>
+  <div class="panes">
+    <div class="shelf" id="shelf" data-empty="henüz eşya yok"></div>
+    <div class="shelf fxp off" id="fxShelf" data-empty="üzerinde etki yok"></div>
+  </div>
   <div class="inv-cap" id="invCap"><div class="cap-slot" id="capSlot"><span class="in">envanter</span><span></span></div></div>
+  <div class="tabs" id="tabs">
+    <button type="button" class="on" data-t="items">eşyalar<sup id="nI"></sup></button>
+    <button type="button" data-t="fx">etkiler<sup id="nF"></sup></button>
+    <i class="tab-ink" id="ink"></i>
+  </div>
 </div></div>
+<button class="bag" id="bag" type="button" aria-label="Envanter" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9.5h10l1.2 10.5H5.8L7 9.5Z"/><path d="M9.2 9.5V8a2.8 2.8 0 0 1 5.6 0v1.5"/></svg></button>
 
 <button class="exit" id="exitBtn" type="button">Menü</button>
 
@@ -618,7 +613,7 @@ window.ENDINGS = {
     document.documentElement.style.setProperty('--full-h', h + 'px');
   }
   document.addEventListener('touchmove', function (e) {
-    if (e.target.closest && e.target.closest('.gal-list, .shelf, .fx')) return;   // Kartlar sayfası kaydırılabilsin
+    if (e.target.closest && e.target.closest('.gal-list, .shelf')) return;   // Kartlar sayfası kaydırılabilsin
     e.preventDefault();
   }, { passive: false });
   window.addEventListener('scroll', function () { window.scrollTo(0, 0); });
@@ -966,30 +961,29 @@ window.Scene = {
 </script>
 
 <script>
-/* Envanter: karakter kartları. Çizimler ART'tan, adlar ART_NAMES'ten gelir.
- *  Inventory.add('id')   → envantere kart ekler (ART'ta o adla çizim olmalı)
- *  Inventory.held        → seçili kartın id'si ya da null
- *  stage üzerinde 'hold' olayı: { id } (seçim) / { id:null } (bırakma)
- *  Sığıyorsa kartlar ortalanır; sığmıyorsa kaydırılır, ortadaki kart öne çıkar (yelpaze). */
+/* Envanter: çanta düğmesiyle açılır/kapanır. İki sayfa: eşyalar ve etkiler (ikisi de kaydırmalı yelpaze).
+ *  Inventory.add('id') / Inventory.held / stage 'hold' olayı { id }
+ *  Inventory.addEffect('id') / removeEffect('id')  ·  hikâyede bayrak: opt.set:['kelepce'] / unset:['kelepce']
+ *  Inventory.toggle() / open() / close()  ·  Çizimler ART[id], adlar ART_NAMES[id] */
 (function () {
-  var stage = document.getElementById('stage'), inv = document.getElementById('inv');
-  var shelf = document.getElementById('shelf'), cap = document.getElementById('invCap'), slot = document.getElementById('capSlot');
-  var fx = document.getElementById('fx'), fxHeld = null;
-  var GAP = 12, SIDE = 22, pitch = 120, tick = 0, easeT = 0;
-  /* ---- DENEME İÇERİĞİ (geçici): mevcut kart çizimlerini kopyalayıp kaydırmalı envanteri ve etki şeridini denemek için.
-   *  Kaldırmak için: DEMO = {} yap ve items/demoEffects'ten demo id'lerini sil. */
+  var stage = document.getElementById('stage'), inv = document.getElementById('inv'), bag = document.getElementById('bag');
+  var cap = document.getElementById('invCap'), slot = document.getElementById('capSlot');
+  var tabs = document.getElementById('tabs'), ink = document.getElementById('ink');
+  var GAP = 12, SIDE = 22;
+
+  /* ---- DENEME İÇERİĞİ (geçici): mevcut çizimleri kopyalar. Kaldırmak için DEMO = {} yap, items'tan demoA/B/C'yi sil. ---- */
   var DEMO = {
     demoA: { src: 'friend', name: 'Arkadaş 2' }, demoB: { src: 'hat', name: 'Şapkalı adam 2' }, demoC: { src: 'friend', name: 'Arkadaş 3' },
     demoE1: { src: 'kelepce', name: 'Kelepçe' }, demoE2: { src: 'friend', name: 'Yorgunluk' }, demoE3: { src: 'hat', name: 'Korku' }
   };
   var demoEffects = ['demoE1', 'demoE2', 'demoE3'];
   function nm(id) { return DEMO[id] ? DEMO[id].name : ((window.ART_NAMES && ART_NAMES[id]) || id); }
-  function svgFor(id) {                       // aynı çizim sayfada iki kez olacağı için id çakışmasın
-    var s = (window.ART && ART[DEMO[id] ? DEMO[id].src : id]) || '';
-    return s.replace(/id="([^"]+)"/g, 'id="inv_$1"').replace(/url\(#([^)]+)\)/g, 'url(#inv_$1)');
+  function svgFor(id) {                       // aynı çizim sayfada birden çok kez olacağı için id çakışmasın
+    var s = (window.ART && ART[DEMO[id] ? DEMO[id].src : id]) || '', p = 'i_' + id + '_';
+    return s.replace(/id="([^"]+)"/g, 'id="' + p + '$1"').replace(/url\(#([^)]+)\)/g, 'url(#' + p + '$1)');
   }
 
-  /* ---- Alt yazı: iki katman çapraz geçiş + akıcı genişlik ---- */
+  /* ---- Alt yazı ---- */
   var spans = slot.children, cur = 0, shown = 'envanter';
   function fitSlot() { slot.style.width = spans[cur].offsetWidth + 'px'; }
   function say(t, on, isFx) {
@@ -1002,153 +996,194 @@ window.Scene = {
     fitSlot();
   }
 
-  /* ---- Yerleşim: sığıyorsa ortala, sığmıyorsa ilk/son kart da ortaya gelebilsin ---- */
-  function layout() {
-    var kids = shelf.children, n = kids.length; if (!n) return;
-    var W = shelf.clientWidth, iw = kids[0].offsetWidth; pitch = iw + GAP;
-    var total = n * pitch - GAP, fits = total <= W - SIDE * 2;
-    var pad = Math.max(SIDE, (W - (fits ? total : iw)) / 2);
-    shelf.style.paddingLeft = shelf.style.paddingRight = pad + 'px';
-    shelf.classList.toggle('many', !fits);
-    [].forEach.call(kids, function (k) { k._c = k.offsetLeft + iw / 2; });
-  }
-  /* Kaydırmaya bağlı yelpaze: merkeze uzaklığa göre ölçek / eğim / saydamlık */
-  function update() {
-    var c = shelf.scrollLeft + shelf.clientWidth / 2;
-    [].forEach.call(shelf.children, function (k) {
-      var d = (k._c - c) / pitch, a = Math.min(Math.abs(d), 2.2);
-      var r = Math.max(-6, Math.min(6, d * 3)), sc = 1 - .07 * a, o = 1 - .4 * Math.max(0, a - 1);
-      var l = k.firstChild;
-      l.style.transform = 'translate3d(0,' + (a * 5).toFixed(2) + 'px,0) rotate(' + r.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
-      l.style.opacity = o.toFixed(3);
-    });
-  }
-  function softRelayout() {                  // yerleşim değişimlerinde geçişli güncelle
-    shelf.classList.add('ease'); layout(); update();
-    clearTimeout(easeT); easeT = setTimeout(function () { shelf.classList.remove('ease'); }, 600);
-  }
-  function centerOn(k) {
-    if (!shelf.classList.contains('many')) return;
-    shelf.scrollTo({ left: k._c - shelf.clientWidth / 2, behavior: 'smooth' });
-  }
-  shelf.addEventListener('scroll', function () {
-    if (shelf.classList.contains('ease')) shelf.classList.remove('ease');   // kaydırma sırasında gecikme olmasın
-    if (!tick) { tick = 1; requestAnimationFrame(function () { tick = 0; update(); }); }
-  }, { passive: true });
-
-  function make(id) {
-    var b = document.createElement('button');
-    b.type = 'button'; b.className = 'ic'; b.setAttribute('data-id', id);
-    b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', nm(id));
-    b.innerHTML = '<div class="lift"><div class="sel"><div class="face">' + svgFor(id) + '</div><div class="halo"></div></div></div>';
-    return b;
-  }
-
-  var Inventory = window.Inventory = {
-    items: ['hat', 'friend', 'demoA', 'demoB', 'demoC'], held: null,
-    build: function () {
-      shelf.innerHTML = '';
-      this.items.forEach(function (id) { shelf.appendChild(make(id)); });
-      layout(); update();
-    },
-    add: function (id) {                      // yalnızca yeni kartı ekler; mevcutlar yeniden çizilmez
-      if (this.items.indexOf(id) >= 0) return;
-      this.items.push(id);
-      var old = [].slice.call(shelf.children), from = old.map(function (k) { return k.getBoundingClientRect().left; });
-      var b = make(id); shelf.appendChild(b);
-      softRelayout();
-      old.forEach(function (k, i) {           // FLIP: eski kartlar yeni yerine kayarak geçer
+  /* ---- Kaydırmalı yelpaze (her sayfa için bir tane) ---- */
+  function Carousel(el) {
+    var c = { el: el, ids: [], held: null }, pitch = 120, tick = 0, easeT = 0;
+    c.make = function (id) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'ic'; b.setAttribute('data-id', id);
+      b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', nm(id));
+      b.innerHTML = '<div class="lift"><div class="sel"><div class="face">' + svgFor(id) + '</div><div class="halo"></div></div></div>';
+      return b;
+    };
+    c.layout = function () {
+      var kids = el.children, n = kids.length;
+      el.classList.toggle('empty', !n);
+      if (!n) { el.classList.remove('many'); return; }
+      var W = el.clientWidth, iw = kids[0].offsetWidth; pitch = iw + GAP;
+      var total = n * pitch - GAP, fits = total <= W - SIDE * 2;
+      var pad = Math.max(SIDE, (W - (fits ? total : iw)) / 2);
+      el.style.paddingLeft = el.style.paddingRight = pad + 'px';
+      el.classList.toggle('many', !fits);
+      [].forEach.call(kids, function (k) { k._c = k.offsetLeft + iw / 2; });
+    };
+    c.update = function () {                  // merkeze uzaklığa göre ölçek / eğim / saydamlık
+      var m = el.scrollLeft + el.clientWidth / 2;
+      [].forEach.call(el.children, function (k) {
+        var d = (k._c - m) / pitch, a = Math.min(Math.abs(d), 2.2);
+        var r = Math.max(-6, Math.min(6, d * 3)), sc = 1 - .07 * a, o = 1 - .4 * Math.max(0, a - 1), l = k.firstChild;
+        l.style.transform = 'translate3d(0,' + (a * 5).toFixed(2) + 'px,0) rotate(' + r.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
+        l.style.opacity = o.toFixed(3);
+      });
+    };
+    c.soft = function () {
+      el.classList.add('ease'); c.layout(); c.update();
+      clearTimeout(easeT); easeT = setTimeout(function () { el.classList.remove('ease'); }, 600);
+    };
+    c.center = function (k) { if (el.classList.contains('many')) el.scrollTo({ left: k._c - el.clientWidth / 2, behavior: 'smooth' }); };
+    c.reflow = function (mutate) {            // FLIP: kartlar yeni yerlerine kayarak geçer
+      var old = [].slice.call(el.children), from = old.map(function (k) { return k.getBoundingClientRect().left; });
+      mutate(); c.soft();
+      old.forEach(function (k, i) {
+        if (!k.parentNode || k.classList.contains('gone')) return;
         var dx = from[i] - k.getBoundingClientRect().left;
         if (Math.abs(dx) > 1 && k.animate) k.animate([{ transform: 'translateX(' + dx + 'px)' }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.22,.85,.3,1)' });
       });
-      centerOn(b);
-    },
-    select: function (id, silent) {
-      this.held = id || null;
-      if (id && fxHeld) { fxHeld = null; [].forEach.call(fx.children, function (c) { c.classList.remove('on'); }); }
-      [].forEach.call(shelf.children, function (c) {
-        var on = c.getAttribute('data-id') === id;
-        c.classList.toggle('on', on); c.setAttribute('aria-pressed', on ? 'true' : 'false');
+    };
+    c.node = function (id) { return el.querySelector('[data-id="' + id + '"]'); };
+    c.build = function () { el.innerHTML = ''; c.ids.forEach(function (id) { el.appendChild(c.make(id)); }); c.layout(); c.update(); };
+    c.add = function (id) {
+      if (c.ids.indexOf(id) >= 0) return false;
+      c.ids.push(id); var b = c.make(id);
+      c.reflow(function () { el.appendChild(b); }); c.center(b); return true;
+    };
+    c.remove = function (id) {
+      var i = c.ids.indexOf(id); if (i < 0) return false;
+      c.ids.splice(i, 1); var b = c.node(id); if (!b) return true;
+      b.classList.add('gone');
+      setTimeout(function () { c.reflow(function () { if (b.parentNode) b.parentNode.removeChild(b); }); }, 360);
+      return true;
+    };
+    c.mark = function (id) {
+      c.held = id || null;
+      [].forEach.call(el.children, function (k) {
+        var on = k.getAttribute('data-id') === id; k.classList.toggle('on', on); k.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
-      shelf.classList.toggle('pick', !!id);
-      if (!silent) say(id ? nm(id) : 'envanter', !!id);
+      el.classList.toggle('pick', !!id);
+    };
+    el.addEventListener('scroll', function () {
+      if (el.classList.contains('ease')) el.classList.remove('ease');
+      if (!tick) { tick = 1; requestAnimationFrame(function () { tick = 0; c.update(); }); }
+    }, { passive: true });
+    return c;
+  }
+
+  var itemsC = Carousel(document.getElementById('shelf')), fxC = Carousel(document.getElementById('fxShelf'));
+  itemsC.ids = ['hat', 'friend', 'demoA', 'demoB', 'demoC'];
+  var unseen = { items: false, fx: false }, tab = 'items', isOpen = false;
+
+  /* ---- Sekmeler, yazı, noktalar ---- */
+  function idle() { return tab === 'items' ? 'envanter' : (fxC.ids.length ? 'etkiler' : 'etki yok'); }
+  function caption() {
+    if (Inventory.held) say(nm(Inventory.held), true, false);
+    else if (Inventory.seen) say(nm(Inventory.seen) + ' etkisi', true, true);
+    else say(idle(), false, false);
+  }
+  function placeInk() {
+    var b = tabs.querySelector('.on'); if (!b) return;
+    ink.style.width = b.offsetWidth + 'px'; ink.style.transform = 'translateX(' + b.offsetLeft + 'px)';
+  }
+  function counts() {
+    document.getElementById('nI').textContent = itemsC.ids.length || '';
+    document.getElementById('nF').textContent = fxC.ids.length || '';
+    placeInk();
+  }
+  function dots() {
+    [].forEach.call(tabs.querySelectorAll('button'), function (b) { b.classList.toggle('dot', !!unseen[b.getAttribute('data-t')]); });
+    bag.classList.toggle('dot', !isOpen && (unseen.items || unseen.fx));
+  }
+  function note(kind) { if (!isOpen || tab !== kind) { unseen[kind] = true; dots(); } }
+
+  var Inventory = window.Inventory = {
+    items: itemsC.ids, effects: fxC.ids, effectFlags: ['kelepce'], held: null, seen: null,
+    add: function (id) { if (itemsC.add(id)) { counts(); note('items'); } },
+    select: function (id, silent) {
+      this.held = id || null; itemsC.mark(id);
+      if (id && this.seen) { this.seen = null; fxC.mark(null); }
+      if (!silent) caption();
       stage.dispatchEvent(new CustomEvent('hold', { detail: { id: this.held } }));
-    }
+    },
+    addEffect: function (id) {
+      if (fxC.add(id)) { counts(); note('fx'); if (tab === 'fx') caption(); stage.dispatchEvent(new CustomEvent('effects', { detail: { effects: fxC.ids.slice() } })); }
+    },
+    removeEffect: function (id) {
+      if (this.seen === id) this.inspect(null);
+      if (fxC.remove(id)) { counts(); if (tab === 'fx') caption(); stage.dispatchEvent(new CustomEvent('effects', { detail: { effects: fxC.ids.slice() } })); }
+    },
+    inspect: function (id) {
+      this.seen = id || null; fxC.mark(id);
+      if (id && this.held) this.select(null, true);       // eşya bırakılır, yazıyı etki devralır
+      caption();
+    },
+    setTab: function (t) {
+      if (t === tab) return;
+      if (this.held) this.select(null, true);
+      if (this.seen) this.inspect(null);
+      tab = t; unseen[t] = false;
+      document.getElementById('shelf').classList.toggle('off', t !== 'items');
+      document.getElementById('fxShelf').classList.toggle('off', t !== 'fx');
+      [].forEach.call(tabs.querySelectorAll('button'), function (b) { b.classList.toggle('on', b.getAttribute('data-t') === t); });
+      placeInk(); dots(); caption();
+    },
+    open: function () {
+      isOpen = true; inv.classList.add('open'); bag.classList.add('on'); bag.setAttribute('aria-expanded', 'true');
+      unseen[tab] = false; dots(); itemsC.layout(); itemsC.update(); fxC.layout(); fxC.update(); placeInk(); fitSlot();
+    },
+    close: function () {
+      isOpen = false; inv.classList.remove('open'); bag.classList.remove('on'); bag.setAttribute('aria-expanded', 'false');
+      if (this.held) this.select(null); if (this.seen) this.inspect(null);
+    },
+    toggle: function () { if (isOpen) this.close(); else this.open(); }
   };
-  shelf.addEventListener('click', function (e) {
+  Inventory.selectEffect = function (id) { Inventory.inspect(id); };
+
+  bag.addEventListener('click', function (e) { e.stopPropagation(); Inventory.toggle(); if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} } });
+  ['pointerdown', 'pointerup'].forEach(function (n) { bag.addEventListener(n, function (e) { e.stopPropagation(); }); inv.addEventListener(n, function (e) { e.stopPropagation(); }); });
+  tabs.addEventListener('click', function (e) { e.stopPropagation(); var b = e.target.closest('button'); if (b) Inventory.setTab(b.getAttribute('data-t')); });
+
+  itemsC.el.addEventListener('click', function (e) {
     e.stopPropagation();
     var c = e.target.closest('.ic');
-    if (!c) { if (Inventory.held) Inventory.select(null); return; }   // raf aralığı / boşluk: bırak
+    if (!c) { if (Inventory.held) Inventory.select(null); return; }
     var id = c.getAttribute('data-id'), was = Inventory.held === id;
     Inventory.select(was ? null : id);
-    if (!was) centerOn(c);                                             // seçilen kart ortaya süzülür
+    if (!was) itemsC.center(c);
     if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
   });
-  ['pointerdown', 'pointerup'].forEach(function (n) { inv.addEventListener(n, function (e) { e.stopPropagation(); }); });
-
-  /* ---- Etki kartları: Inventory.addEffect('kelepce') / removeEffect('kelepce')
-   *  Ya da hikâyede bayrak ile: opt.set:['kelepce'] → etki kartı belirir, unset → kaybolur.
-   *  Çizim ART[id], ad ART_NAMES[id]; kayıtlı bayraklar Inventory.effectFlags içinde. */
-  Inventory.effects = []; Inventory.effectFlags = ['kelepce'];
-  function fxBtn(id) { return fx.querySelector('[data-id="' + id + '"]'); }
-  Inventory.addEffect = function (id) {
-    if (this.effects.indexOf(id) >= 0) return;
-    this.effects.push(id);
-    var b = document.createElement('button');
-    b.type = 'button'; b.className = 'fc'; b.setAttribute('data-id', id);
-    b.setAttribute('aria-label', nm(id) + ' etkisi');
-    b.innerHTML = '<div class="sel"><div class="face">' + svgFor(id) + '</div><div class="halo"></div></div>';
-    fx.appendChild(b); fx.classList.add('has'); inv.classList.add('hasfx');
-    stage.dispatchEvent(new CustomEvent('effects', { detail: { effects: this.effects.slice() } }));
-  };
-  Inventory.removeEffect = function (id) {
-    var i = this.effects.indexOf(id); if (i < 0) return;
-    this.effects.splice(i, 1);
-    if (fxHeld === id) Inventory.selectEffect(null);
-    var b = fxBtn(id); if (b) { b.classList.add('gone'); setTimeout(function () { if (b.parentNode) b.parentNode.removeChild(b); }, 380); }
-    if (!this.effects.length) { fx.classList.remove('has'); inv.classList.remove('hasfx'); }
-    stage.dispatchEvent(new CustomEvent('effects', { detail: { effects: this.effects.slice() } }));
-  };
-  Inventory.selectEffect = function (id) {
-    fxHeld = id || null;
-    [].forEach.call(fx.children, function (c) { c.classList.toggle('on', c.getAttribute('data-id') === id); });
-    if (id && this.held) this.select(null, true);       // eşya bırakılır, yazıyı etki devralır
-    say(id ? nm(id) + ' etkisi' : 'envanter', !!id, !!id);
-  };
-  fx.addEventListener('click', function (e) {
+  fxC.el.addEventListener('click', function (e) {
     e.stopPropagation();
-    var c = e.target.closest('.fc');
-    if (!c) { if (fxHeld) Inventory.selectEffect(null); return; }
-    var id = c.getAttribute('data-id');
-    Inventory.selectEffect(fxHeld === id ? null : id);
+    var c = e.target.closest('.ic');
+    if (!c) { if (Inventory.seen) Inventory.inspect(null); return; }
+    var id = c.getAttribute('data-id'), was = Inventory.seen === id;
+    Inventory.inspect(was ? null : id);
+    if (!was) fxC.center(c);
     if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
   });
-  function syncFx() {
+
+  function syncFx() {                          // hikâye bayraklarından etkiler
     var f = (window.Game && Game.state && Game.state.flags) || {};
     Inventory.effectFlags.forEach(function (id) { if (f[id]) Inventory.addEffect(id); else Inventory.removeEffect(id); });
   }
-  stage.addEventListener('card', syncFx); stage.addEventListener('end', syncFx);
-  Inventory.build(); fitSlot();
-  var rl = 0; function relayout() { clearTimeout(rl); rl = setTimeout(function () { softRelayout(); fitSlot(); }, 60); }
-  window.addEventListener('resize', relayout);
-  window.addEventListener('load', relayout);
-  if (window.ResizeObserver) new ResizeObserver(relayout).observe(shelf);
-  document.body.addEventListener('click', function () {                // boş alana dokunulunca bırak
+  stage.addEventListener('card', function () { inv.classList.remove('away'); bag.classList.remove('away'); syncFx(); });
+  stage.addEventListener('end', function () { inv.classList.add('away'); bag.classList.add('away'); syncFx(); });
+  document.body.addEventListener('click', function () {                // boş alana dokunulunca seçim bırakılır
     if (!document.body.classList.contains('playing')) return;
-    if (Inventory.held) Inventory.select(null); else if (fxHeld) Inventory.selectEffect(null);
+    if (Inventory.held) Inventory.select(null); else if (Inventory.seen) Inventory.inspect(null);
   });
 
-  stage.addEventListener('end', function () { inv.classList.add('away'); });
-  stage.addEventListener('card', function () { inv.classList.remove('away'); });
-  new MutationObserver(function () {          // menüye çıkılınca seçim sıfırlanır
-    if (document.body.classList.contains('playing')) {
-      demoEffects.forEach(function (id, i) { setTimeout(function () { Inventory.addEffect(id); }, 500 + i * 160); });   // deneme etkileri
-      return;
-    }
-    {
-      Inventory.select(null); Inventory.selectEffect(null); inv.classList.remove('away');
-      Inventory.effects = []; fx.innerHTML = ''; fx.classList.remove('has'); inv.classList.remove('hasfx');
-    }
+  itemsC.build(); fxC.build(); counts(); fitSlot();
+  var rl = 0; function relayout() { clearTimeout(rl); rl = setTimeout(function () { itemsC.soft(); fxC.soft(); fitSlot(); placeInk(); }, 60); }
+  window.addEventListener('resize', relayout); window.addEventListener('load', relayout);
+  if (window.ResizeObserver) new ResizeObserver(relayout).observe(itemsC.el);
+
+  var wasPlaying = false;
+  new MutationObserver(function () {
+    var pl = document.body.classList.contains('playing');
+    if (pl === wasPlaying) return; wasPlaying = pl;
+    if (pl) { demoEffects.forEach(function (id, i) { setTimeout(function () { Inventory.addEffect(id); }, 600 + i * 200); }); return; }
+    Inventory.close(); inv.classList.remove('away'); bag.classList.remove('away');   // menüye çıkış: her şey sıfırlanır
+    if (Inventory.seen) Inventory.inspect(null);
+    fxC.ids.length = 0; fxC.build(); unseen.items = unseen.fx = false; Inventory.setTab('items'); counts(); dots();
   }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 })();
 </script>
