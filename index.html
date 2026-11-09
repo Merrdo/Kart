@@ -167,6 +167,37 @@
   }
   body.playing .exit { opacity: .4; pointer-events: auto; }
   body.playing .exit.armed { opacity: .9; }
+
+  /* ---- Kartlar sayfası (ana menüden açılır) ---- */
+  .menu-btn + .menu-btn { margin-top: 14px; animation-delay: .34s; }
+  .gallery {
+    position: absolute; top: 0; left: 0; z-index: 11;
+    width: 100%; height: var(--full-h, 100%);
+    background: var(--bg); color: #efe9dc;
+    display: flex; flex-direction: column;
+    font-family: Georgia, 'Times New Roman', serif;
+    opacity: 0; visibility: hidden;
+    transition: opacity .3s ease, visibility 0s linear .3s;
+  }
+  .gallery.open { opacity: 1; visibility: visible; transition: opacity .35s ease; }
+  .gal-top { position: relative; flex: none; height: calc(env(safe-area-inset-top, 0px) + 58px); padding: calc(env(safe-area-inset-top, 0px) + 8px) 8px 0; }
+  .gal-back {
+    position: absolute; left: 8px; top: calc(env(safe-area-inset-top, 0px) + 8px);
+    appearance: none; -webkit-appearance: none; background: none; border: 0; cursor: pointer;
+    padding: 12px; font: 11px Georgia, 'Times New Roman', serif; letter-spacing: .26em; text-transform: uppercase;
+    color: #efe9dc; opacity: .6;
+  }
+  .gal-back:active { opacity: 1; }
+  .gal-title { position: absolute; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 8px); text-align: center; line-height: 40px; font-size: 18px; letter-spacing: .12em; pointer-events: none; }
+  .gal-list {
+    flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 18px; align-content: start;
+    padding: 18px 22px calc(env(safe-area-inset-bottom, 0px) + 40px);
+  }
+  .gal-img { aspect-ratio: 1; border-radius: 22px; overflow: hidden; background: #1b2127; box-shadow: 0 14px 30px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.06); }
+  .gal-img img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+  .gal-name { margin-top: 12px; text-align: center; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; opacity: .55; overflow-wrap: anywhere; }
+  .gal-empty { grid-column: 1 / -1; text-align: center; opacity: .5; padding-top: 12vh; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -224,6 +255,12 @@
   <h1>Akan Yazı</h1>
   <div class="rule"></div>
   <button class="menu-btn" id="playBtn" type="button">Başla</button>
+  <button class="menu-btn" id="cardsBtn" type="button">Kartlar</button>
+</div>
+
+<div class="gallery" id="gallery" aria-hidden="true">
+  <div class="gal-top"><button class="gal-back" id="galBack" type="button">Geri</button><div class="gal-title">Kartlar</div></div>
+  <div class="gal-list" id="galList"></div>
 </div>
 
 <script>
@@ -246,35 +283,210 @@
  *   once:     true ise bir kez çıkar
  * }
  */
+/* CARDS:BEGIN */
 window.CARDS = [
-  { id:'q1', speaker:'Uğultu', clarity:0.04, text:'…uyan… Beni du…yu…yor musun? Gözlerini aç.',
-    left:  { label:'Sus', effects:{}, next: ['q2'] },
-    right: { label:'Evet', effects:{}, next: ['q2'] } },
-  { id:'q2', speaker:'Boğuk bir ses', clarity:0.15, text:'Dur. Adını söyle bana.',
-    left:  { label:'Hatırlamıyorum', effects:{}, next: ['q3'] },
-    right: { label:'Söylemem', effects:{}, next: ['q3'] } },
-  { id:'q3', speaker:'Boğuk bir ses', clarity:0.3, text:'Dün gece… neredeydin? Düşün.',
-    left:  { label:'Hayır', effects:{}, next: ['q4'] },
-    right: { label:'Hatırlıyorum', effects:{}, next: ['q4'], set:['hatirliyor'] } },
-  { id:'q4', speaker:'Bir erkek sesi', clarity:0.5, text:'Yanındaki adam kimdi? Bana onu anlat.',
-    left:  { label:'Tanımıyorum', effects:{}, next: ['q5'] },
-    right: { label:'Anlatırım', effects:{}, next: ['q5'] } },
-  { id:'q5', speaker:'Bir gölge', clarity:0.7, text:'Bir şey saklıyorsun. Gözlerinden belli.',
-    left:  { label:'Saklamıyorum', effects:{}, next: ['q6'] },
-    right: { label:'Saklıyorum', effects:{}, next: ['q6'] } },
-  { id:'q6', speaker:'???', clarity:0.88, text:'Bana bak. Şimdi söyle: beni tanıdın mı?',
-    left:  { label:'Hayır', effects:{}, next: ['q7'] },
-    right: { label:'Belki', effects:{}, next: ['q7'] } },
-  { id:'q7', speaker:'???', clarity:1, text:'Işık kısılıyor. Yarın devam ederiz.',
-    left:  { label:'…', effects:{}, set:['sorguBitti'], next:['f1'] },
-    right: { label:'…', effects:{}, set:['sorguBitti'], next:['f1'] } },
-
-  /* Arkadaş: sorgudan sonra, dışarıda, gün ışığında. art:'friend' kartın görselini değiştirir. */
-  { id:'f1', art:'friend', speaker:'Arkadaşın', text:'Çıkabildin demek. Yüzün bembeyaz. Ne sordular sana?', once:true,
-    requires:{ flags:['sorguBitti'] },
-    left:  { label:'Anlatmam', effects:{} },
-    right: { label:'Anlatırım', effects:{} } }
+  {
+    "id": "k1",
+    "speaker": "???",
+    "text": "Hey, Burada mısın? ",
+    "arc": "ana",
+    "left": {
+      "label": "Sanırım",
+      "effects": {
+        "faith": 5
+      },
+      "next": [
+        "k2"
+      ]
+    },
+    "right": {
+      "label": "Sende kimsin",
+      "effects": {},
+      "next": [
+        "k3"
+      ]
+    },
+    "art": "hat"
+  },
+  {
+    "id": "k2",
+    "speaker": "???",
+    "text": "Güzel, dün gece neredeydin?",
+    "arc": "ana",
+    "left": {
+      "label": "Evde",
+      "effects": {},
+      "next": [
+        "k4"
+      ]
+    },
+    "right": {
+      "label": "Hatırlamıyorum",
+      "effects": {},
+      "next": [
+        "k5"
+      ]
+    },
+    "art": "hat"
+  },
+  {
+    "id": "k3",
+    "speaker": "???",
+    "text": "Gerçekleri bilmek isteyen biri",
+    "arc": "ana",
+    "left": {
+      "label": "Gerçekler nedir?",
+      "effects": {},
+      "next": [
+        "k6"
+      ]
+    },
+    "right": {
+      "label": "Birazdan buradan çıkacağım",
+      "effects": {},
+      "next": [
+        "k7"
+      ]
+    },
+    "art": "hat"
+  },
+  {
+    "id": "k4",
+    "speaker": "???",
+    "text": "YALAN, Şu fotoğraflara iyi bak bu sen değil misin?",
+    "arc": "ana",
+    "left": {
+      "label": "Benim",
+      "effects": {},
+      "next": [
+        "k10"
+      ]
+    },
+    "right": {
+      "label": "Ama nasıl?",
+      "effects": {},
+      "next": [
+        "k10"
+      ]
+    },
+    "art": "hat"
+  },
+  {
+    "id": "k5",
+    "speaker": "???",
+    "text": "Yormaya başladın, anlatta işimize bakalım",
+    "arc": "ana",
+    "left": {
+      "label": "Sana anlatacak bir şeyim yok",
+      "effects": {},
+      "next": []
+    },
+    "right": {
+      "label": "(Sessiz kal)",
+      "effects": {},
+      "next": [
+        "k10"
+      ]
+    },
+    "art": "hat"
+  },
+  {
+    "id": "k6",
+    "speaker": "???",
+    "text": "Hatırlamıyorumuş gibi davranmana gerek yok, kandırabileceğin biri değilim, şimdi gerçekler",
+    "arc": "ana",
+    "left": {
+      "label": "(Avukatını çağır)",
+      "effects": {},
+      "next": [
+        "k8"
+      ]
+    },
+    "right": {
+      "label": "Dosyanın içinde ne var?",
+      "effects": {},
+      "next": []
+    },
+    "art": "hat"
+  },
+  {
+    "id": "k7",
+    "speaker": "???",
+    "text": "Cevaplarımı aldıktan sonra çıkabilirsin.",
+    "arc": "ana",
+    "left": {
+      "label": "Kendini avutmaya devam et",
+      "effects": {},
+      "next": []
+    },
+    "right": {
+      "label": "(Avukatı çağır)",
+      "effects": {},
+      "next": [
+        "k8"
+      ]
+    },
+    "art": "hat"
+  },
+  {
+    "id": "k8",
+    "speaker": "Avukat Russel",
+    "text": "Sohbetinizi bölüyorum, ama müvekkilimin gitme vakti geldi, iyi günler dilerim",
+    "arc": "ana",
+    "left": {
+      "label": "(Arkana bakmadan Kapıdan çık) ",
+      "effects": {},
+      "next": []
+    },
+    "right": {
+      "label": "Tekrar görüşür müyüz?",
+      "effects": {},
+      "next": [
+        "k9"
+      ]
+    },
+    "art": "friend"
+  },
+  {
+    "id": "k9",
+    "speaker": "???",
+    "text": "Özletmeyeceğim kendimi",
+    "arc": "ana",
+    "left": {
+      "label": "",
+      "effects": {},
+      "next": []
+    },
+    "right": {
+      "label": "",
+      "effects": {},
+      "next": []
+    },
+    "art": "hat"
+  },
+  {
+    "id": "k10",
+    "speaker": "Avukat Russel",
+    "text": "Gitmemiz gerekiyor. ",
+    "arc": "ana",
+    "left": {
+      "label": "",
+      "effects": {},
+      "next": [
+        "k8"
+      ]
+    },
+    "right": {
+      "label": "",
+      "effects": {},
+      "next": [
+        "k8"
+      ]
+    },
+    "art": "friend"
+  }
 ];
+/* CARDS:END */
 
 /* Oyun sonları: bir istatistik 0'a ya da 100'e değince tetiklenir. */
 window.ENDINGS = {
@@ -476,7 +688,10 @@ window.ENDINGS = {
     var h = Math.max(window.innerHeight, document.documentElement.clientHeight, screenH);
     document.documentElement.style.setProperty('--full-h', h + 'px');
   }
-  document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+  document.addEventListener('touchmove', function (e) {
+    if (e.target.closest && e.target.closest('.gal-list')) return;   // Kartlar sayfası kaydırılabilsin
+    e.preventDefault();
+  }, { passive: false });
   window.addEventListener('scroll', function () { window.scrollTo(0, 0); });
 
   if (location.hash === '#debug') {
@@ -556,6 +771,8 @@ window.ENDINGS = {
 <script>
 /* Kart içeriğini çizer. (clarity alanı veride duruyor, animasyonlar şimdilik kapalı.) */
 window.ART = { hat: null, friend: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><defs><clipPath id=\"fcg\"><path d=\"M152 186Q152 146 200 146Q248 146 248 186V224Q248 262 200 270Q152 262 152 224Z\"/></clipPath><clipPath id=\"hsg\"><path d=\"M153 204Q146 168 153 146Q154 128 170 120L168 110L182 116L186 104L198 114L208 102L214 114L228 106L228 120L242 118L240 132Q250 138 250 152Q258 172 247 204L243 194Q244 178 238 170L230 174L225 164L216 176L209 160L199 174L190 162L181 176L171 164L162 177Q158 186 157 196Z\"/></clipPath></defs><rect width=\"400\" height=\"400\" fill=\"#a9bccb\"/><circle cx=\"332\" cy=\"52\" r=\"26\" fill=\"#eee9dc\"/><rect x=\"0\" y=\"112\" width=\"400\" height=\"288\" fill=\"#75899a\"/><rect x=\"0\" y=\"104\" width=\"400\" height=\"10\" fill=\"#8fa5b6\"/><path d=\"M14 236V170A14 14 0 0 1 42 170V236Z\" fill=\"#5f7384\"/><rect x=\"11\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><path d=\"M66 236V170A14 14 0 0 1 94 170V236Z\" fill=\"#5f7384\"/><rect x=\"63\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><path d=\"M112 236V170A14 14 0 0 1 140 170V236Z\" fill=\"#5f7384\"/><rect x=\"109\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><path d=\"M262 236V170A14 14 0 0 1 290 170V236Z\" fill=\"#5f7384\"/><rect x=\"259\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><path d=\"M310 236V170A14 14 0 0 1 338 170V236Z\" fill=\"#5f7384\"/><rect x=\"307\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><path d=\"M358 236V170A14 14 0 0 1 386 170V236Z\" fill=\"#5f7384\"/><rect x=\"355\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><rect x=\"0\" y=\"338\" width=\"400\" height=\"62\" fill=\"#5d6c78\"/><rect x=\"0\" y=\"338\" width=\"400\" height=\"3\" fill=\"#7b8b97\"/><polygon points=\"320,76 344,76 90,338 0,338 0,300\" fill=\"#e6edf3\" opacity=\".07\"/><path d=\"M34 400V364Q34 320 96 308L156 298H244L304 308Q366 320 366 364V400Z\" fill=\"#4a3224\"/><path d=\"M34 400V364Q34 320 96 308L156 298H200V400H34Z\" fill=\"#382519\"/><path d=\"M250 298L304 308Q352 318 362 348Q318 326 250 312Z\" fill=\"#6e4c36\"/><polygon points=\"154,303 161,279 178,268 181,303\" fill=\"#2e1f15\"/><g transform=\"translate(400 0) scale(-1 1)\"><polygon points=\"154,303 161,279 178,268 181,303\" fill=\"#5a3f2c\"/></g><rect x=\"178\" y=\"256\" width=\"44\" height=\"58\" fill=\"#a9765a\"/><path d=\"M178 256H222V272Q200 288 178 272Z\" fill=\"#8a5c46\"/><polygon points=\"186,298 214,298 222,400 178,400\" fill=\"#e9e5d9\"/><polygon points=\"186,298 200,298 200,400 178,400\" fill=\"#cdc9bd\"/><path d=\"M184 298Q200 322 216 298\" stroke=\"#cdc9bd\" stroke-width=\"3\" fill=\"none\"/><path d=\"M188 306Q200 342 212 306\" stroke=\"#c9a45c\" stroke-width=\"2\" fill=\"none\"/><circle cx=\"200\" cy=\"325.5\" r=\"2.6\" fill=\"none\" stroke=\"#c9a45c\" stroke-width=\"1.6\"/><polygon points=\"200,328 206,337 200,350 194,337\" fill=\"#c9a45c\"/><path d=\"M186 306L178 400\" stroke=\"#a39a8c\" stroke-width=\"2.4\" fill=\"none\"/><path d=\"M214 306L222 400\" stroke=\"#a39a8c\" stroke-width=\"2.4\" fill=\"none\"/><path d=\"M232 352L284 342\" stroke=\"#a39a8c\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\"/><defs><clipPath id=\"clg\"><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\"/></clipPath></defs><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" transform=\"translate(0 4)\" fill=\"#2a1c12\" opacity=\".6\"/><g transform=\"translate(400 0) scale(-1 1)\"><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" transform=\"translate(0 4)\" fill=\"#2e1f15\" opacity=\".5\"/></g><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" fill=\"#4a3224\"/><g clip-path=\"url(#clg)\"><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" transform=\"translate(2 3.5)\" fill=\"#382519\"/></g><g transform=\"translate(400 0) scale(-1 1)\"><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" fill=\"#6e4c36\"/><g clip-path=\"url(#clg)\"><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" transform=\"translate(2 3.5)\" fill=\"#4a3224\"/></g></g><g clip-path=\"url(#clg)\"><polygon points=\"182,283 187,304 172,345 177,313\" fill=\"#2a1c12\" opacity=\"0.55\"/></g><g transform=\"translate(400 0) scale(-1 1)\"><g clip-path=\"url(#clg)\"><polygon points=\"182,283 187,304 172,345 177,313\" fill=\"#2e1f15\" opacity=\"0.5\"/></g></g><circle cx=\"164\" cy=\"333\" r=\"2.8\" fill=\"#a39a8c\"/><g transform=\"translate(400 0) scale(-1 1)\"><circle cx=\"164\" cy=\"333\" r=\"2.8\" fill=\"#a39a8c\"/></g><defs><clipPath id=\"vg\"><path d=\"M152 186Q152 146 200 146Q248 146 248 186V214L243 240Q238 254 224 263Q213 272 200 272Q187 272 176 263Q162 254 157 240L152 214Z\"/></clipPath><clipPath id=\"wg\"><path d=\"M152 214Q142 172 149 146Q153 120 176 110Q196 100 220 104Q246 108 253 136Q260 172 248 214L244 200Q246 186 242 178Q238 172 232 176Q229 170 224 174Q221 178 217 176Q213 168 207 174Q203 180 199 174Q195 166 189 174Q184 180 180 172Q176 166 170 172Q165 178 161 174Q157 180 156 190L155 204Z\"/></clipPath></defs><circle cx=\"153\" cy=\"216\" r=\"10\" fill=\"#c39670\"/><circle cx=\"247\" cy=\"216\" r=\"10\" fill=\"#dcb08a\"/><path d=\"M152 186Q152 146 200 146Q248 146 248 186V214L243 240Q238 254 224 263Q213 272 200 272Q187 272 176 263Q162 254 157 240L152 214Z\" fill=\"#dcb08a\"/><g clip-path=\"url(#vg)\"><rect x=\"150\" y=\"146\" width=\"50\" height=\"130\" fill=\"#c39670\"/><path d=\"M150 228L156 246Q170 266 200 279Q230 266 244 246L250 228Q238 248 200 250Q162 248 150 228Z\" fill=\"#17120f\" opacity=\".22\"/><polygon points=\"150,146 250,146 250,174 150,180\" fill=\"#5b3a2c\" opacity=\".3\"/></g><g transform=\"translate(0 35.2) scale(1 .8)\"><path d=\"M160 130Q150 112 163 103Q168 116 180 121Z\" fill=\"#17120f\"/><path d=\"M184 114Q182 96 198 91Q197 104 208 109Z\" fill=\"#17120f\"/><path d=\"M212 108Q219 93 235 96Q230 107 240 116Z\" fill=\"#17120f\"/><path d=\"M238 126Q250 114 259 123Q255 131 253 142Z\" fill=\"#17120f\"/><path d=\"M152 214Q142 172 149 146Q153 120 176 110Q196 100 220 104Q246 108 253 136Q260 172 248 214L244 200Q246 186 242 178Q238 172 232 176Q229 170 224 174Q221 178 217 176Q213 168 207 174Q203 180 199 174Q195 166 189 174Q184 180 180 172Q176 166 170 172Q165 178 161 174Q157 180 156 190L155 204Z\" fill=\"#17120f\"/><g clip-path=\"url(#wg)\"><path d=\"M198 106Q228 100 248 130Q232 124 214 128Q202 124 198 106Z\" fill=\"#3a2c22\"/><path d=\"M232 134Q246 138 250 162Q240 156 232 134Z\" fill=\"#3a2c22\"/><path d=\"M172 120Q186 118 196 130\" stroke=\"#3a2c22\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M206 112Q214 120 214 134\" stroke=\"#3a2c22\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M164 146Q170 156 168 166\" stroke=\"#3a2c22\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\"/></g></g><path d=\"M170 188Q182 183 194 187\" stroke=\"#17120f\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M206 182Q218 175 230 180\" stroke=\"#17120f\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\"/><circle cx=\"184\" cy=\"202\" r=\"3.4\" fill=\"#1b1416\"/><circle cx=\"216\" cy=\"202\" r=\"3.4\" fill=\"#1b1416\"/><polygon points=\"200,212 209,234 200,236\" fill=\"#c39670\"/><path d=\"M187 248Q201 257 217 245\" stroke=\"#8a5a4a\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\"/></svg>" };
+/* Çizim adları: Kartlar sayfasında ve editörde bu adlarla görünür. Yeni çizim ekleyince buraya da ad yaz. */
+window.ART_NAMES = { hat: 'Şapkalı adam', friend: 'Arkadaş' };
 window.Scene = {
   render: function (c, spk, txt) {
     var art = document.querySelector('.art');
@@ -788,6 +1005,33 @@ window.Scene = {
   if (Game.state && Game.state.over) { ended = Game.state.ending; locked = true; draw(); showEnd(); }
   else if (Game.current) { renderCard(Game.current); startEnter(); }
   else draw();
+})();
+</script>
+<script>
+/* Kartlar sayfası: oyundaki tüm kart çizimlerini isimleriyle listeler. */
+(function () {
+  var gal = document.getElementById('gallery'), list = document.getElementById('galList');
+  if (ART.hat === null) { var a0 = document.querySelector('.art'); if (a0) ART.hat = a0.innerHTML; }   // ilk çizim sayfadaki hâliyle saklanır
+
+  function url(svg) {
+    if (!/<svg[^>]*\sxmlns=/i.test(svg)) svg = svg.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+  function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function build() {
+    var keys = Object.keys(ART).filter(function (k) { return typeof ART[k] === 'string' && ART[k]; });
+    list.innerHTML = keys.length ? keys.map(function (k) {
+      return '<div class="gal-item"><div class="gal-img"><img alt="" draggable="false" src="' + url(ART[k]) + '"></div><div class="gal-name">' + esc((window.ART_NAMES && ART_NAMES[k]) || k) + '</div></div>';
+    }).join('') : '<div class="gal-empty">Henüz kart yok</div>';
+    list.scrollTop = 0;
+  }
+  function open()  { build(); gal.classList.add('open');  gal.setAttribute('aria-hidden', 'false'); }
+  function close() { gal.classList.remove('open'); gal.setAttribute('aria-hidden', 'true'); }
+
+  document.getElementById('cardsBtn').addEventListener('click', function (e) { e.stopPropagation(); open(); });
+  document.getElementById('galBack').addEventListener('click', function (e) { e.stopPropagation(); close(); });
+  gal.addEventListener('click', function (e) { e.stopPropagation(); });
 })();
 </script>
 </body>
