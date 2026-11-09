@@ -264,6 +264,37 @@ body.playing .ic{ animation:deal .7s var(--ease) backwards; }
 body.playing .ic:nth-child(2){ animation-delay:.12s; } body.playing .ic:nth-child(3){ animation-delay:.24s; }
 body.playing .ic:nth-child(4){ animation-delay:.36s; }
 @media (prefers-reduced-motion:reduce){ .sel,.lift,.cap-slot,.cap-slot span{ transition:none !important; } .ic{ animation:none !important; } }
+/* ---- Etki kartları: eşyalardan ayrı, küçük, kırmızımsı çerçeveli şerit ---- */
+.inv-cap{ transition:opacity .4s ease, color .4s ease; }
+.inv-cap.fxcap{ color:#e8998a; }
+.shelf{ transition:padding-top .5s var(--ease); }
+.inv.hasfx .shelf{ padding-top:48px; }
+.fx{
+  position:relative; display:flex; gap:10px; padding:0 22px; overflow-x:auto; overflow-y:hidden; touch-action:pan-x; scrollbar-width:none;
+  max-height:0; opacity:0; pointer-events:none;
+  transition:max-height .55s var(--ease), opacity .45s ease, padding-top .55s var(--ease);
+}
+.fx::-webkit-scrollbar{ display:none; }
+.fx > :first-child{ margin-left:auto; } .fx > :last-child{ margin-right:auto; }
+.fx.has{ max-height:76px; opacity:1; padding-top:12px; }
+body.playing .fx.has{ pointer-events:auto; }
+.fx.has::before{ content:""; position:absolute; top:3px; left:24%; right:24%; height:1px; background:linear-gradient(90deg,transparent,rgba(232,153,138,.35),transparent); }
+.fc{
+  flex:none; width:calc(var(--iw) * .5); aspect-ratio:1; position:relative; padding:0; border:0; background:none; cursor:pointer;
+  -webkit-appearance:none; appearance:none; -webkit-tap-highlight-color:transparent;
+  animation:fxin .6s var(--ease) backwards; transition:opacity .35s ease, transform .35s var(--ease);
+}
+.fc.gone{ opacity:0; transform:scale(.6); pointer-events:none; }
+.fc .face{ position:absolute; inset:0; border-radius:12px; overflow:hidden; background:#2b1618;
+  box-shadow:0 6px 12px rgba(0,0,0,.6), inset 0 0 0 1.5px rgba(222,120,98,.7); }
+.fc .face svg{ display:block; width:100%; height:100%; pointer-events:none; }
+.fc .halo{ position:absolute; inset:0; border-radius:12px; pointer-events:none; opacity:0; transition:opacity .4s ease;
+  box-shadow:0 10px 16px rgba(0,0,0,.7), 0 0 0 1.5px #e8836a, 0 0 18px rgba(232,131,106,.38); }
+.fc.on .halo{ opacity:1; }
+.fc.on .sel{ transform:translateY(-6px) scale(1.1); }
+.fc:active:not(.on) .sel{ transform:scale(1.04); transition-duration:.18s; }
+@keyframes fxin{ from{ opacity:0; transform:scale(.55) translateY(12px); } }
+@media (prefers-reduced-motion:reduce){ .fx,.fc,.shelf{ transition:none !important; animation:none !important; } }
 </style>
 </head>
 <body>
@@ -318,6 +349,7 @@ body.playing .ic:nth-child(4){ animation-delay:.36s; }
 
 <div class="inv" id="inv"><div class="inv-in">
   <div class="shelf" id="shelf"></div>
+  <div class="fx" id="fx"></div>
   <div class="inv-cap" id="invCap"><div class="cap-slot" id="capSlot"><span class="in">envanter</span><span></span></div></div>
 </div></div>
 
@@ -586,7 +618,7 @@ window.ENDINGS = {
     document.documentElement.style.setProperty('--full-h', h + 'px');
   }
   document.addEventListener('touchmove', function (e) {
-    if (e.target.closest && e.target.closest('.gal-list, .shelf')) return;   // Kartlar sayfası kaydırılabilsin
+    if (e.target.closest && e.target.closest('.gal-list, .shelf, .fx')) return;   // Kartlar sayfası kaydırılabilsin
     e.preventDefault();
   }, { passive: false });
   window.addEventListener('scroll', function () { window.scrollTo(0, 0); });
@@ -669,7 +701,8 @@ window.ENDINGS = {
 /* Kart içeriğini çizer. (clarity alanı veride duruyor, animasyonlar şimdilik kapalı.) */
 window.ART = { hat: null, friend: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><defs><clipPath id=\"fcg\"><path d=\"M152 186Q152 146 200 146Q248 146 248 186V224Q248 262 200 270Q152 262 152 224Z\"/></clipPath><clipPath id=\"hsg\"><path d=\"M153 204Q146 168 153 146Q154 128 170 120L168 110L182 116L186 104L198 114L208 102L214 114L228 106L228 120L242 118L240 132Q250 138 250 152Q258 172 247 204L243 194Q244 178 238 170L230 174L225 164L216 176L209 160L199 174L190 162L181 176L171 164L162 177Q158 186 157 196Z\"/></clipPath></defs><rect width=\"400\" height=\"400\" fill=\"#a9bccb\"/><circle cx=\"332\" cy=\"52\" r=\"26\" fill=\"#eee9dc\"/><rect x=\"0\" y=\"112\" width=\"400\" height=\"288\" fill=\"#75899a\"/><rect x=\"0\" y=\"104\" width=\"400\" height=\"10\" fill=\"#8fa5b6\"/><path d=\"M14 236V170A14 14 0 0 1 42 170V236Z\" fill=\"#5f7384\"/><rect x=\"11\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><path d=\"M66 236V170A14 14 0 0 1 94 170V236Z\" fill=\"#5f7384\"/><rect x=\"63\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><path d=\"M112 236V170A14 14 0 0 1 140 170V236Z\" fill=\"#5f7384\"/><rect x=\"109\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><path d=\"M262 236V170A14 14 0 0 1 290 170V236Z\" fill=\"#5f7384\"/><rect x=\"259\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><path d=\"M310 236V170A14 14 0 0 1 338 170V236Z\" fill=\"#5f7384\"/><rect x=\"307\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><path d=\"M358 236V170A14 14 0 0 1 386 170V236Z\" fill=\"#5f7384\"/><rect x=\"355\" y=\"236\" width=\"34\" height=\"5\" fill=\"#8fa5b6\"/><rect x=\"0\" y=\"338\" width=\"400\" height=\"62\" fill=\"#5d6c78\"/><rect x=\"0\" y=\"338\" width=\"400\" height=\"3\" fill=\"#7b8b97\"/><polygon points=\"320,76 344,76 90,338 0,338 0,300\" fill=\"#e6edf3\" opacity=\".07\"/><path d=\"M34 400V364Q34 320 96 308L156 298H244L304 308Q366 320 366 364V400Z\" fill=\"#4a3224\"/><path d=\"M34 400V364Q34 320 96 308L156 298H200V400H34Z\" fill=\"#382519\"/><path d=\"M250 298L304 308Q352 318 362 348Q318 326 250 312Z\" fill=\"#6e4c36\"/><polygon points=\"154,303 161,279 178,268 181,303\" fill=\"#2e1f15\"/><g transform=\"translate(400 0) scale(-1 1)\"><polygon points=\"154,303 161,279 178,268 181,303\" fill=\"#5a3f2c\"/></g><rect x=\"178\" y=\"256\" width=\"44\" height=\"58\" fill=\"#a9765a\"/><path d=\"M178 256H222V272Q200 288 178 272Z\" fill=\"#8a5c46\"/><polygon points=\"186,298 214,298 222,400 178,400\" fill=\"#e9e5d9\"/><polygon points=\"186,298 200,298 200,400 178,400\" fill=\"#cdc9bd\"/><path d=\"M184 298Q200 322 216 298\" stroke=\"#cdc9bd\" stroke-width=\"3\" fill=\"none\"/><path d=\"M188 306Q200 342 212 306\" stroke=\"#c9a45c\" stroke-width=\"2\" fill=\"none\"/><circle cx=\"200\" cy=\"325.5\" r=\"2.6\" fill=\"none\" stroke=\"#c9a45c\" stroke-width=\"1.6\"/><polygon points=\"200,328 206,337 200,350 194,337\" fill=\"#c9a45c\"/><path d=\"M186 306L178 400\" stroke=\"#a39a8c\" stroke-width=\"2.4\" fill=\"none\"/><path d=\"M214 306L222 400\" stroke=\"#a39a8c\" stroke-width=\"2.4\" fill=\"none\"/><path d=\"M232 352L284 342\" stroke=\"#a39a8c\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\"/><defs><clipPath id=\"clg\"><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\"/></clipPath></defs><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" transform=\"translate(0 4)\" fill=\"#2a1c12\" opacity=\".6\"/><g transform=\"translate(400 0) scale(-1 1)\"><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" transform=\"translate(0 4)\" fill=\"#2e1f15\" opacity=\".5\"/></g><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" fill=\"#4a3224\"/><g clip-path=\"url(#clg)\"><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" transform=\"translate(2 3.5)\" fill=\"#382519\"/></g><g transform=\"translate(400 0) scale(-1 1)\"><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" fill=\"#6e4c36\"/><g clip-path=\"url(#clg)\"><path d=\"M182 283L160 291Q148 295 142 302Q141 308 146 316L158 340Q163 350 172 343L186 303Z\" transform=\"translate(2 3.5)\" fill=\"#4a3224\"/></g></g><g clip-path=\"url(#clg)\"><polygon points=\"182,283 187,304 172,345 177,313\" fill=\"#2a1c12\" opacity=\"0.55\"/></g><g transform=\"translate(400 0) scale(-1 1)\"><g clip-path=\"url(#clg)\"><polygon points=\"182,283 187,304 172,345 177,313\" fill=\"#2e1f15\" opacity=\"0.5\"/></g></g><circle cx=\"164\" cy=\"333\" r=\"2.8\" fill=\"#a39a8c\"/><g transform=\"translate(400 0) scale(-1 1)\"><circle cx=\"164\" cy=\"333\" r=\"2.8\" fill=\"#a39a8c\"/></g><defs><clipPath id=\"vg\"><path d=\"M152 186Q152 146 200 146Q248 146 248 186V214L243 240Q238 254 224 263Q213 272 200 272Q187 272 176 263Q162 254 157 240L152 214Z\"/></clipPath><clipPath id=\"wg\"><path d=\"M152 214Q142 172 149 146Q153 120 176 110Q196 100 220 104Q246 108 253 136Q260 172 248 214L244 200Q246 186 242 178Q238 172 232 176Q229 170 224 174Q221 178 217 176Q213 168 207 174Q203 180 199 174Q195 166 189 174Q184 180 180 172Q176 166 170 172Q165 178 161 174Q157 180 156 190L155 204Z\"/></clipPath></defs><circle cx=\"153\" cy=\"216\" r=\"10\" fill=\"#c39670\"/><circle cx=\"247\" cy=\"216\" r=\"10\" fill=\"#dcb08a\"/><path d=\"M152 186Q152 146 200 146Q248 146 248 186V214L243 240Q238 254 224 263Q213 272 200 272Q187 272 176 263Q162 254 157 240L152 214Z\" fill=\"#dcb08a\"/><g clip-path=\"url(#vg)\"><rect x=\"150\" y=\"146\" width=\"50\" height=\"130\" fill=\"#c39670\"/><path d=\"M150 228L156 246Q170 266 200 279Q230 266 244 246L250 228Q238 248 200 250Q162 248 150 228Z\" fill=\"#17120f\" opacity=\".22\"/><polygon points=\"150,146 250,146 250,174 150,180\" fill=\"#5b3a2c\" opacity=\".3\"/></g><g transform=\"translate(0 35.2) scale(1 .8)\"><path d=\"M160 130Q150 112 163 103Q168 116 180 121Z\" fill=\"#17120f\"/><path d=\"M184 114Q182 96 198 91Q197 104 208 109Z\" fill=\"#17120f\"/><path d=\"M212 108Q219 93 235 96Q230 107 240 116Z\" fill=\"#17120f\"/><path d=\"M238 126Q250 114 259 123Q255 131 253 142Z\" fill=\"#17120f\"/><path d=\"M152 214Q142 172 149 146Q153 120 176 110Q196 100 220 104Q246 108 253 136Q260 172 248 214L244 200Q246 186 242 178Q238 172 232 176Q229 170 224 174Q221 178 217 176Q213 168 207 174Q203 180 199 174Q195 166 189 174Q184 180 180 172Q176 166 170 172Q165 178 161 174Q157 180 156 190L155 204Z\" fill=\"#17120f\"/><g clip-path=\"url(#wg)\"><path d=\"M198 106Q228 100 248 130Q232 124 214 128Q202 124 198 106Z\" fill=\"#3a2c22\"/><path d=\"M232 134Q246 138 250 162Q240 156 232 134Z\" fill=\"#3a2c22\"/><path d=\"M172 120Q186 118 196 130\" stroke=\"#3a2c22\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M206 112Q214 120 214 134\" stroke=\"#3a2c22\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M164 146Q170 156 168 166\" stroke=\"#3a2c22\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\"/></g></g><path d=\"M170 188Q182 183 194 187\" stroke=\"#17120f\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M206 182Q218 175 230 180\" stroke=\"#17120f\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\"/><circle cx=\"184\" cy=\"202\" r=\"3.4\" fill=\"#1b1416\"/><circle cx=\"216\" cy=\"202\" r=\"3.4\" fill=\"#1b1416\"/><polygon points=\"200,212 209,234 200,236\" fill=\"#c39670\"/><path d=\"M187 248Q201 257 217 245\" stroke=\"#8a5a4a\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\"/></svg>" };
 /* Çizim adları: Kartlar sayfasında ve editörde bu adlarla görünür. Yeni çizim ekleyince buraya da ad yaz. */
-window.ART_NAMES = { hat: 'Şapkalı adam', friend: 'Arkadaş' };
+window.ART_NAMES = { hat: 'Şapkalı adam', friend: 'Arkadaş', kelepce: 'Kelepçe' };
+ART.kelepce = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="400" height="400" fill="#2b1618"/><circle cx="200" cy="208" r="168" fill="#3a1d20"/><g fill="none" stroke-width="9"><rect x="160" y="193" width="46" height="28" rx="14" stroke="#8d969e"/><rect x="194" y="193" width="46" height="28" rx="14" stroke="#aab2b9"/></g><g fill="none"><circle cx="112" cy="210" r="62" stroke="#c4cbd1" stroke-width="22"/><circle cx="112" cy="210" r="50" stroke="#6d757c" stroke-width="3"/><path d="M70 176A52 52 0 0 1 120 150" stroke="#f2f5f7" stroke-width="5" stroke-linecap="round" opacity=".65"/><circle cx="288" cy="210" r="62" stroke="#c4cbd1" stroke-width="22"/><circle cx="288" cy="210" r="50" stroke="#6d757c" stroke-width="3"/><path d="M246 176A52 52 0 0 1 296 150" stroke="#f2f5f7" stroke-width="5" stroke-linecap="round" opacity=".65"/></g><rect x="84" y="128" width="56" height="36" rx="9" fill="#8b949b"/><rect x="260" y="128" width="56" height="36" rx="9" fill="#8b949b"/><circle cx="112" cy="146" r="6" fill="#23282c"/><circle cx="288" cy="146" r="6" fill="#23282c"/><rect x="0" y="352" width="400" height="48" fill="#1f1012"/></svg>';
 window.Scene = {
   render: function (c, spk, txt) {
     var art = document.querySelector('.art');
@@ -941,18 +974,26 @@ window.Scene = {
 (function () {
   var stage = document.getElementById('stage'), inv = document.getElementById('inv');
   var shelf = document.getElementById('shelf'), cap = document.getElementById('invCap'), slot = document.getElementById('capSlot');
+  var fx = document.getElementById('fx'), fxHeld = null;
   var GAP = 12, SIDE = 22, pitch = 120, tick = 0, easeT = 0;
-  function nm(id) { return (window.ART_NAMES && ART_NAMES[id]) || id; }
+  /* ---- DENEME İÇERİĞİ (geçici): mevcut kart çizimlerini kopyalayıp kaydırmalı envanteri ve etki şeridini denemek için.
+   *  Kaldırmak için: DEMO = {} yap ve items/demoEffects'ten demo id'lerini sil. */
+  var DEMO = {
+    demoA: { src: 'friend', name: 'Arkadaş 2' }, demoB: { src: 'hat', name: 'Şapkalı adam 2' }, demoC: { src: 'friend', name: 'Arkadaş 3' },
+    demoE1: { src: 'kelepce', name: 'Kelepçe' }, demoE2: { src: 'friend', name: 'Yorgunluk' }, demoE3: { src: 'hat', name: 'Korku' }
+  };
+  var demoEffects = ['demoE1', 'demoE2', 'demoE3'];
+  function nm(id) { return DEMO[id] ? DEMO[id].name : ((window.ART_NAMES && ART_NAMES[id]) || id); }
   function svgFor(id) {                       // aynı çizim sayfada iki kez olacağı için id çakışmasın
-    var s = (window.ART && ART[id]) || '';
+    var s = (window.ART && ART[DEMO[id] ? DEMO[id].src : id]) || '';
     return s.replace(/id="([^"]+)"/g, 'id="inv_$1"').replace(/url\(#([^)]+)\)/g, 'url(#inv_$1)');
   }
 
   /* ---- Alt yazı: iki katman çapraz geçiş + akıcı genişlik ---- */
   var spans = slot.children, cur = 0, shown = 'envanter';
   function fitSlot() { slot.style.width = spans[cur].offsetWidth + 'px'; }
-  function say(t, on) {
-    cap.classList.toggle('has', !!on);
+  function say(t, on, isFx) {
+    cap.classList.toggle('has', !!on); cap.classList.toggle('fxcap', !!isFx);
     if (t === shown) return;
     shown = t;
     var old = spans[cur]; cur = 1 - cur; var n = spans[cur];
@@ -1004,7 +1045,7 @@ window.Scene = {
   }
 
   var Inventory = window.Inventory = {
-    items: ['hat', 'friend'], held: null,
+    items: ['hat', 'friend', 'demoA', 'demoB', 'demoC'], held: null,
     build: function () {
       shelf.innerHTML = '';
       this.items.forEach(function (id) { shelf.appendChild(make(id)); });
@@ -1022,14 +1063,15 @@ window.Scene = {
       });
       centerOn(b);
     },
-    select: function (id) {
+    select: function (id, silent) {
       this.held = id || null;
+      if (id && fxHeld) { fxHeld = null; [].forEach.call(fx.children, function (c) { c.classList.remove('on'); }); }
       [].forEach.call(shelf.children, function (c) {
         var on = c.getAttribute('data-id') === id;
         c.classList.toggle('on', on); c.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
       shelf.classList.toggle('pick', !!id);
-      say(id ? nm(id) : 'envanter', !!id);
+      if (!silent) say(id ? nm(id) : 'envanter', !!id);
       stage.dispatchEvent(new CustomEvent('hold', { detail: { id: this.held } }));
     }
   };
@@ -1043,19 +1085,70 @@ window.Scene = {
     if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
   });
   ['pointerdown', 'pointerup'].forEach(function (n) { inv.addEventListener(n, function (e) { e.stopPropagation(); }); });
+
+  /* ---- Etki kartları: Inventory.addEffect('kelepce') / removeEffect('kelepce')
+   *  Ya da hikâyede bayrak ile: opt.set:['kelepce'] → etki kartı belirir, unset → kaybolur.
+   *  Çizim ART[id], ad ART_NAMES[id]; kayıtlı bayraklar Inventory.effectFlags içinde. */
+  Inventory.effects = []; Inventory.effectFlags = ['kelepce'];
+  function fxBtn(id) { return fx.querySelector('[data-id="' + id + '"]'); }
+  Inventory.addEffect = function (id) {
+    if (this.effects.indexOf(id) >= 0) return;
+    this.effects.push(id);
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'fc'; b.setAttribute('data-id', id);
+    b.setAttribute('aria-label', nm(id) + ' etkisi');
+    b.innerHTML = '<div class="sel"><div class="face">' + svgFor(id) + '</div><div class="halo"></div></div>';
+    fx.appendChild(b); fx.classList.add('has'); inv.classList.add('hasfx');
+    stage.dispatchEvent(new CustomEvent('effects', { detail: { effects: this.effects.slice() } }));
+  };
+  Inventory.removeEffect = function (id) {
+    var i = this.effects.indexOf(id); if (i < 0) return;
+    this.effects.splice(i, 1);
+    if (fxHeld === id) Inventory.selectEffect(null);
+    var b = fxBtn(id); if (b) { b.classList.add('gone'); setTimeout(function () { if (b.parentNode) b.parentNode.removeChild(b); }, 380); }
+    if (!this.effects.length) { fx.classList.remove('has'); inv.classList.remove('hasfx'); }
+    stage.dispatchEvent(new CustomEvent('effects', { detail: { effects: this.effects.slice() } }));
+  };
+  Inventory.selectEffect = function (id) {
+    fxHeld = id || null;
+    [].forEach.call(fx.children, function (c) { c.classList.toggle('on', c.getAttribute('data-id') === id); });
+    if (id && this.held) this.select(null, true);       // eşya bırakılır, yazıyı etki devralır
+    say(id ? nm(id) + ' etkisi' : 'envanter', !!id, !!id);
+  };
+  fx.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var c = e.target.closest('.fc');
+    if (!c) { if (fxHeld) Inventory.selectEffect(null); return; }
+    var id = c.getAttribute('data-id');
+    Inventory.selectEffect(fxHeld === id ? null : id);
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
+  });
+  function syncFx() {
+    var f = (window.Game && Game.state && Game.state.flags) || {};
+    Inventory.effectFlags.forEach(function (id) { if (f[id]) Inventory.addEffect(id); else Inventory.removeEffect(id); });
+  }
+  stage.addEventListener('card', syncFx); stage.addEventListener('end', syncFx);
   Inventory.build(); fitSlot();
   var rl = 0; function relayout() { clearTimeout(rl); rl = setTimeout(function () { softRelayout(); fitSlot(); }, 60); }
   window.addEventListener('resize', relayout);
   window.addEventListener('load', relayout);
   if (window.ResizeObserver) new ResizeObserver(relayout).observe(shelf);
   document.body.addEventListener('click', function () {                // boş alana dokunulunca bırak
-    if (Inventory.held && document.body.classList.contains('playing')) Inventory.select(null);
+    if (!document.body.classList.contains('playing')) return;
+    if (Inventory.held) Inventory.select(null); else if (fxHeld) Inventory.selectEffect(null);
   });
 
   stage.addEventListener('end', function () { inv.classList.add('away'); });
   stage.addEventListener('card', function () { inv.classList.remove('away'); });
   new MutationObserver(function () {          // menüye çıkılınca seçim sıfırlanır
-    if (!document.body.classList.contains('playing')) { Inventory.select(null); inv.classList.remove('away'); }
+    if (document.body.classList.contains('playing')) {
+      demoEffects.forEach(function (id, i) { setTimeout(function () { Inventory.addEffect(id); }, 500 + i * 160); });   // deneme etkileri
+      return;
+    }
+    {
+      Inventory.select(null); Inventory.selectEffect(null); inv.classList.remove('away');
+      Inventory.effects = []; fx.innerHTML = ''; fx.classList.remove('has'); inv.classList.remove('hasfx');
+    }
   }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 })();
 </script>
