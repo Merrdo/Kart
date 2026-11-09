@@ -241,6 +241,8 @@ body.playing .inv:not(.away).open .inv-in{ opacity:1; transform:none; visibility
 .ic .face svg{ display:block; width:100%; height:100%; pointer-events:none; }
 .ic .face::after{ content:""; position:absolute; inset:0; background:#000; opacity:0; transition:opacity .4s ease; }
 .shelf.pick .ic:not(.on) .face::after{ opacity:.5; }
+.shelf.fxp{ --ring:#b9a2ff; --glow:rgba(160,128,255,.5); }
+.fxp .ic .halo{ box-shadow:0 20px 28px rgba(0,0,0,.8), 0 0 0 2px var(--ring), 0 0 30px var(--glow), inset 0 0 22px rgba(160,128,255,.18); }
 .ic .halo{ position:absolute; inset:0; border-radius:calc(var(--iw) * .15); pointer-events:none; opacity:0; transition:opacity .45s ease;
   box-shadow:0 20px 28px rgba(0,0,0,.8), 0 0 0 1.5px var(--ring,rgba(239,233,220,.9)), 0 0 24px var(--glow,rgba(239,233,220,.22)); }
 .ic.on .halo{ opacity:1; }
@@ -250,7 +252,7 @@ body.playing .inv:not(.away).open .inv-in{ opacity:1; transform:none; visibility
 .inv-cap{ display:flex; align-items:center; justify-content:center; gap:14px; height:34px; box-sizing:border-box; padding:6px 20px; width:max-content; margin:2px auto calc(env(safe-area-inset-bottom,0px) + 10px); -webkit-tap-highlight-color:transparent;
   font:italic 14px/1 Georgia,'Times New Roman',serif; letter-spacing:.08em; color:#efe9dc; opacity:.4; transition:opacity .4s ease, color .4s ease; }
 .inv-cap::before,.inv-cap::after{ content:""; width:34px; height:1px; background:currentColor; opacity:.5; }
-.inv-cap.has{ opacity:.9; }
+.inv-cap.has{ opacity:.9; } .inv-cap.fxcap{ color:#c4b3ff; }
 .cap-slot{ position:relative; height:22px; width:70px; transition:width .55s var(--ease); }
 .cap-slot span{ position:absolute; left:50%; top:0; line-height:22px; white-space:nowrap; opacity:0; transform:translate3d(-50%,7px,0); transition:opacity .32s ease, transform .5s var(--ease); }
 .cap-slot span.in{ opacity:1; transform:translate3d(-50%,0,0); }
@@ -1029,12 +1031,7 @@ window.Scene = {
       clearTimeout(easeT); easeT = setTimeout(function () { el.classList.remove('ease'); }, 600);
     };
     c.center = function (k, instant) { if (el.classList.contains('many')) el.scrollTo({ left: k._c - el.clientWidth / 2, behavior: instant ? 'auto' : 'smooth' }); };
-    c.align = function () {                   // görünmeden önce anında ortala: kartlar kayarak değil hazır gelir
-      c.layout(); var kids = el.children;
-      if (kids.length && el.classList.contains('many')) el.scrollLeft = kids[Math.floor((kids.length - 1) / 2)]._c - el.clientWidth / 2;
-      else el.scrollLeft = 0;
-      c.update();
-    };
+
     c.reflow = function (mutate) {            // FLIP: kartlar yeni yerlerine kayarak geçer
       var old = [].slice.call(el.children), from = old.map(function (k) { return k.getBoundingClientRect().left; });
       mutate(); c.soft();
@@ -1049,7 +1046,7 @@ window.Scene = {
     c.add = function (id) {
       if (c.ids.indexOf(id) >= 0) return false;
       c.ids.push(id); var b = c.make(id);
-      c.reflow(function () { el.appendChild(b); }); c.center(b, !isOpen || el.classList.contains('off')); return true;
+      c.reflow(function () { el.appendChild(b); }); if (isOpen && !el.classList.contains('off')) c.center(b); return true;   // gizliyken kaydırma yok: kaldığı yerde durur
     };
     c.remove = function (id) {
       var i = c.ids.indexOf(id); if (i < 0) return false;
@@ -1127,12 +1124,11 @@ window.Scene = {
       document.getElementById('shelf').classList.toggle('off', t !== 'items');
       document.getElementById('fxShelf').classList.toggle('off', t !== 'fx');
       [].forEach.call(tabs.querySelectorAll('button'), function (b) { b.classList.toggle('on', b.getAttribute('data-t') === t); });
-      if (t === 'fx') fxC.align();
       placeInk(); dots(); caption();
     },
     open: function () {
       isOpen = true; inv.classList.add('open');
-      unseen[tab] = false; dots(); caption(); itemsC.layout(); itemsC.update(); if (tab === 'fx') fxC.align(); else { fxC.layout(); fxC.update(); } placeInk(); fitSlot();
+      unseen[tab] = false; dots(); caption(); itemsC.layout(); itemsC.update(); fxC.layout(); fxC.update(); placeInk(); fitSlot();
     },
     close: function () {
       isOpen = false; inv.classList.remove('open');
