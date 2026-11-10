@@ -129,6 +129,13 @@
   .meta .spk { display:block; font-size:11px; letter-spacing:.28em; text-transform:uppercase; opacity:.5; margin-bottom:10px; }
   .meta .txt { font-size:20px; line-height:1.38; }
   .opt { bottom:auto; top:calc(50% - var(--drop) + var(--ch) / 2 + 58px); }
+
+  /* ---- v5: seçenek metni kartın ÜSTÜNDE (başparmak asla örtmez) ----
+     Sürüklerken soru solar, aynı yerde seçenek belirir (Reigns tarzı). */
+  .opt { top:auto; bottom:calc(50% + var(--drop) + var(--ch) / 2 + 30px);
+    font-size:32px; line-height:1.15; letter-spacing:.005em;
+    text-shadow:0 2px 18px rgba(0,0,0,.55); }
+  .meta { will-change:opacity, transform; }
   .deck i:nth-child(1) { transform:translateY(34px) scale(.88); background-color:#0d1115; }
   .deck i:nth-child(2) { transform:translateY(17px) scale(.94); background-color:#11161a; }
   .deck i:nth-child(3) { transform:none; background-color:#161b20; }
@@ -723,6 +730,7 @@ window.Scene = {
   var sideL = document.getElementById('sideL'), sideR = document.getElementById('sideR');
   var optL = document.getElementById('optL'), optR = document.getElementById('optR');
   var endEl = document.getElementById('end'), endT = document.getElementById('endT');
+  var metaEl = document.getElementById('meta');
 
   var x = 0, y = 0, vx = 0, vy = 0, s = 1, o = 0;        // kartın durumu
   var mode = 'idle';                                       // idle | drag | settle | exit | gap | enter
@@ -744,6 +752,11 @@ window.Scene = {
     sideL.style.opacity = pl.toFixed(3);
     sideR.style.opacity = pr.toFixed(3);
     var lo = clamp((pl - .15) / .6, 0, 1), ro = clamp((pr - .15) / .6, 0, 1);
+    if (!endEl.classList.contains('show')) {                // soru, seçenek belirirken söner ve hafifçe yukarı kayar
+      var m = Math.max(lo, ro);
+      metaEl.style.opacity = (1 - Math.min(1, m * 1.6)).toFixed(3);
+      metaEl.style.transform = 'translate3d(0,' + (-m * 10).toFixed(1) + 'px,0)';
+    }
     optL.style.opacity = lo.toFixed(3);  optL.style.transform = 'translate3d(' + (-(1 - lo) * 26).toFixed(1) + 'px,0,0)';
     optR.style.opacity = ro.toFixed(3);  optR.style.transform = 'translate3d(' + ((1 - ro) * 26).toFixed(1) + 'px,0,0)';
   }
