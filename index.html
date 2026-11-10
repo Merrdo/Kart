@@ -289,6 +289,16 @@ body.playing .inv:not(.away) .inv-cap{ pointer-events:auto; cursor:pointer; }
 @media (prefers-reduced-motion:reduce){ .inv-cap.dot .cap-slot span.in, .tabs button.dot{ animation:none !important; background-position:50% 0; } }
 @media (prefers-reduced-motion:reduce){ .sel,.lift,.shelf,.inv-in,.cap-slot,.cap-slot span,.tab-ink,.bag{ transition:none !important; } .ic{ animation:none !important; } }
 </style>
+<style>
+/* ---- v6: kart başparmak bölgesinde ----
+   Envanter kapalıyken kart ekranın alt yarısına iner; envanter açılınca yukarı süzülür ve panele yer açar.
+   --drop pozitif = yukarı, negatif = aşağı. Tüm parçalar (kart, deste, soru, seçenek) bu tek değişkeni izler. */
+@property --drop { syntax:'<length>'; inherits:true; initial-value:0px; }
+:root { --drop: calc(var(--full-h, 844px) * -.075); transition: --drop .55s cubic-bezier(.22,.85,.3,1); }
+:root.inv-open { --drop: calc(var(--full-h, 844px) * .06); }
+.stage { padding-bottom: 0; padding-top: calc(var(--drop) * -2); }
+@media (prefers-reduced-motion:reduce){ :root { transition:none; } }
+</style>
 </head>
 <body>
 <div class="stage" id="stage">
@@ -1140,11 +1150,11 @@ window.Scene = {
       placeInk(); dots(); caption();
     },
     open: function () {
-      isOpen = true; inv.classList.add('open');
+      isOpen = true; inv.classList.add('open'); document.documentElement.classList.add('inv-open');
       unseen[tab] = false; dots(); caption(); itemsC.layout(); itemsC.update(); fxC.layout(); fxC.update(); placeInk(); fitSlot();
     },
     close: function () {
-      isOpen = false; inv.classList.remove('open');
+      isOpen = false; inv.classList.remove('open'); document.documentElement.classList.remove('inv-open');
       if (this.held) this.select(null, true); if (this.seen) this.inspect(null);
       dots(); caption();
     },
